@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D6 Spielfeld-Diagramm-Tool — VC Smash Winterthur</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Calibri, Arial, sans-serif;
+    background: #F8FAFC;
+    color: #1F2937;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 18px 16px 40px; }
+  h1 {
+    font-size: 19px;
+    color: #1D4ED8;
+    margin: 0 0 2px;
+  }
+  .sub { font-size: 12.5px; color: #6B7280; margin: 0 0 16px; }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 10px;
+    background: #EFF6FF;
+    border: 1px solid #DBEAFE;
+    border-radius: 10px;
+  }
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 7px 12px;
+    border-radius: 7px;
+    border: 1px solid #93C5FD;
+    background: #FFFFFF;
+    color: #1D4ED8;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button:hover { background: #DBEAFE; }
+  button.primary { background: #2563EB; color: #fff; border-color: #2563EB; }
+  button.primary:hover { background: #1D4ED8; }
+  button.active { background: #1D4ED8; color: #fff; border-color: #1D4ED8; }
+  button.danger { border-color: #FCA5A5; color: #B91C1C; }
+  button.danger:hover { background: #FEE2E2; }
+
+  label.toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #1D4ED8;
+    font-weight: 600;
+    padding: 0 4px;
+  }
+  label.toggle select {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1D4ED8;
+    border: 1px solid #93C5FD;
+    border-radius: 6px;
+    padding: 5px 7px;
+    background: #fff;
+  }
+
+  .court-frame {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 10px;
+  }
+  svg { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
+
+  .player { cursor: grab; }
+  .player:active { cursor: grabbing; }
+  .player.selected circle.main { stroke: #F59E0B; stroke-width: 4px; }
+
+  .hint {
+    font-size: 12px; color: #6B7280; margin-top: 10px; line-height: 1.5;
+  }
+  .hint b { color: #1D4ED8; }
+  .footer-note {
+    margin-top: 18px; font-size: 11.5px; color: #9CA3AF; border-top: 1px solid #E5E7EB; padding-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>D6 Spielfeld-Diagramm-Tool</h1>
+  <p class="sub">VC Smash Winterthur &middot; Spielerinnen frei positionieren, beschriften, verbinden &middot; als Bild exportieren</p>
+
+  <div class="toolbar">
+    <button class="primary" id="btnAdd">+ Spielerin</button>
+    <button id="btnPathMode">Laufweg zeichnen</button>
+    <button id="btnClearPaths">Laufwege l&ouml;schen</button>
+    <button class="danger" id="btnDelete">Ausgew&auml;hlte l&ouml;schen</button>
+    <label class="toggle"><input type="checkbox" id="chkNumbers" checked /> Positionsnummern</label>
+    <label class="toggle"><input type="checkbox" id="chkRules" checked /> Positionsregel-Linien</label>
+    <span style="flex:1"></span>
+    <label class="toggle">Rotation:
+      <select id="selRotation">
+        <option value="1">1 &mdash; Zuspiel 1</option>
+        <option value="2">2 &mdash; Zuspiel 2</option>
+        <option value="3">3 &mdash; Zuspiel 3</option>
+        <option value="4">4 &mdash; Zuspiel 4</option>
+        <option value="5">5 &mdash; Zuspiel 5</option>
+        <option value="6">6 &mdash; Zuspiel 6</option>
+      </select>
+    </label>
+    <button class="danger" id="btnReset">Leeres Feld</button>
+    <button class="primary" id="btnExport">Als PNG speichern</button>
+  </div>
+
+  <div class="court-frame">
+    <svg id="courtSvg" viewBox="0 0 400 372" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrowHead" markerWidth="9" markerHeight="9" refX="6.5" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7 Z" fill="#FFFFFF" stroke="#0F172A" stroke-width="0.6"></path>
+        </marker>
+      </defs>
+      <g id="rulesLayer"></g>
+      <g id="pathsLayer"></g>
+      <g id="playersLayer"></g>
+    </svg>
+  </div>
+
+  <p class="hint">
+    <b>Rotation-Dropdown</b>: Zuspiel 1&ndash;6 w&auml;hlen &mdash; die passende Grundformation (Z/AA/MB/DIA auf den sechs Positionen) wird automatisch aufgestellt &middot;
+    <b>Ziehen</b> = Position &auml;ndern &middot; <b>Doppelklick</b> auf einen Kreis = Beschriftung &auml;ndern &middot;
+    <b>Klick auf den kleinen Farbpunkt</b> oben links am Kreis = Farbe wechseln &middot;
+    <b>Positionsregel-Linien</b> (fein, schwarz): verbinden automatisch die sechs nummerierten Grundpositionen 1&ndash;6 &mdash; bei einer Stellungsfehler-Verletzung (z.&nbsp;B. Pos.&nbsp;2 nicht n&auml;her am Netz als Pos.&nbsp;1) wird die Linie gestrichelt. Folgt automatisch, wenn du Spielerinnen verschiebst &middot;
+    <b>Laufweg zeichnen</b>: an, dann mit gedr&uuml;ckter Maustaste/Finger frei eine Linie ziehen &mdash; zeigt Laufwege/Aktionen nach der Annahme, wird automatisch zu einer glatten Linie mit Pfeilspitze begradigt.
+    Der Stand wird automatisch in diesem Browser gespeichert.
+  </p>
+
+  <div class="footer-note">VC Smash Winterthur &middot; Damen 6 &middot; Werkzeug f&uuml;r Taktik-Grafiken, passend zum Word-Dokument &bdquo;D6 Spielsystem 5-1&ldquo;.</div>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("courtSvg");
+  const playersLayer = document.getElementById("playersLayer");
+  const pathsLayer = document.getElementById("pathsLayer");
+  const rulesLayer = document.getElementById("rulesLayer");
+  const chkRules = document.getElementById("chkRules");
+
+  // Stellungsfehler-Regel (Overlap): die sechs Grundpositionen bilden ein
+  // Sechseck 1-2-3-4-5-6-1. Fuer jedes benachbarte Paar gilt eine feste
+  // Vorne/Hinten- oder Rechts/Links-Bedingung. "ok" prueft, ob sie erfuellt ist.
+  const RULE_PAIRS = [
+    // Drei Vorne/Hinten-Spalten (rechts, Mitte, links)
+    { a: "1", b: "2", desc: "Pos. 2 muss näher am Netz sein als Pos. 1", ok: (pa, pb) => pb.y < pa.y },
+    { a: "6", b: "3", desc: "Pos. 3 muss näher am Netz sein als Pos. 6", ok: (pa, pb) => pb.y < pa.y },
+    { a: "5", b: "4", desc: "Pos. 4 muss näher am Netz sein als Pos. 5", ok: (pa, pb) => pb.y < pa.y },
+    // Links/Rechts innerhalb der vorderen Reihe (4-3-2)
+    { a: "2", b: "3", desc: "Pos. 2 muss rechts von Pos. 3 sein", ok: (pa, pb) => pa.x > pb.x },
+    { a: "3", b: "4", desc: "Pos. 3 muss rechts von Pos. 4 sein", ok: (pa, pb) => pa.x > pb.x },
+    // Links/Rechts innerhalb der hinteren Reihe (5-6-1)
+    { a: "5", b: "6", desc: "Pos. 6 muss rechts von Pos. 5 sein", ok: (pa, pb) => pb.x > pa.x },
+    { a: "6", b: "1", desc: "Pos. 1 muss rechts von Pos. 6 sein", ok: (pa, pb) => pb.x > pa.x },
+  ];
+
+  function renderRuleChecks() {
+    rulesLayer.innerHTML = "";
+    if (!state.showRules) return;
+    const byNum = {};
+    state.players.forEach((p) => { if (p.num) byNum[p.num] = p; });
+    RULE_PAIRS.forEach((rule) => {
+      const pa = byNum[rule.a], pb = byNum[rule.b];
+      if (!pa || !pb) return;
+      // subtile, feine schwarze Linie als Hilfslinie; bei einer Verletzung
+      // wird nur das Strichmuster gestrichelt, um es dezent erkennbar zu
+      // machen, ohne die Ansicht mit Ampelfarben zu ueberladen.
+      const valid = rule.ok(pa, pb);
+      const line = document.createElementNS(NS, "line");
+      line.setAttribute("x1", pa.x); line.setAttribute("y1", pa.y);
+      line.setAttribute("x2", pb.x); line.setAttribute("y2", pb.y);
+      line.setAttribute("stroke", "#111827");
+      line.setAttribute("stroke-width", valid ? "1" : "1.4");
+      line.setAttribute("stroke-dasharray", valid ? "0" : "3 3");
+      line.setAttribute("opacity", valid ? "0.4" : "0.75");
+      line.dataset.desc = rule.desc;
+      rulesLayer.appendChild(line);
+    });
+  }
+  const chkNumbers = document.getElementById("chkNumbers");
+
+  const COLORS = ["#FFFFFF", "#2563EB", "#FDE68A", "#BBF7D0", "#FBCFE8", "#E5E7EB"];
+  const TEXT_ON = {
+    "#FFFFFF": "#1D4ED8", "#2563EB": "#FFFFFF", "#FDE68A": "#92400E",
+    "#BBF7D0": "#065F46", "#FBCFE8": "#9D174D", "#E5E7EB": "#374151",
+  };
+
+  const STORAGE_KEY = "d6-court-tool-state-v4";
+  let state = { players: [], paths: [], showNumbers: true, showRules: true };
+  let selectedId = null;
+  let pathMode = false;
+  let currentStroke = null;
+  let idCounter = 1;
+
+  // --- Freihand-Glaettung: Douglas-Peucker vereinfacht die rohen Punkte auf
+  // wenige Stuetzpunkte, Catmull-Rom zeichnet dann eine weiche Kurve
+  // hindurch statt der wackligen Handlinie. Bei einer fast geraden Geste
+  // bleiben nur Start- und Endpunkt uebrig -> automatisch eine gerade Linie.
+  function perpendicularDistance(p, a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const mag = Math.hypot(dx, dy);
+    if (mag === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+    const u = ((p.x - a.x) * dx + (p.y - a.y) * dy) / (mag * mag);
+    const cx = a.x + u * dx, cy = a.y + u * dy;
+    return Math.hypot(p.x - cx, p.y - cy);
+  }
+
+  function simplifyRDP(points, epsilon) {
+    if (points.length < 3) return points.slice();
+    let dmax = 0, index = 0;
+    const first = points[0], last = points[points.length - 1];
+    for (let i = 1; i < points.length - 1; i++) {
+      const d = perpendicularDistance(points[i], first, last);
+      if (d > dmax) { dmax = d; index = i; }
+    }
+    if (dmax > epsilon) {
+      const left = simplifyRDP(points.slice(0, index + 1), epsilon);
+      const right = simplifyRDP(points.slice(index), epsilon);
+      return left.slice(0, -1).concat(right);
+    }
+    return [first, last];
+  }
+
+  function smoothPathD(pts) {
+    if (pts.length < 2) return "";
+    if (pts.length === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`;
+    let d = `M ${pts[0].x} ${pts[0].y} `;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2] || p2;
+      const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+      d += `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y} `;
+    }
+    return d;
+  }
+
+  function uid() { return "p" + (idCounter++) + "_" + Date.now().toString(36); }
+
+  // Ein Beachvolleyball-/Hallenfeld ist pro Seite 9m x 9m. Die Angriffslinie
+  // (3m-Linie) liegt 3m von der Netzlinie entfernt, also bei einem Drittel
+  // der Feldtiefe. Wir bilden das massstaeblich ab: Feld = Quadrat 300x300,
+  // Netz oben, 3m-Linie bei 1/3 der Tiefe (100 von 300).
+  const COURT_LEFT = 50, COURT_TOP = 30, COURT_SIZE = 300;
+  const COURT_RIGHT = COURT_LEFT + COURT_SIZE, COURT_BOTTOM = COURT_TOP + COURT_SIZE;
+  const ATTACK_Y = COURT_TOP + COURT_SIZE * (3 / 9); // 3m-Linie
+
+  function drawCourtChrome() {
+    // remove any previous chrome (keep defs)
+    Array.from(svg.querySelectorAll(".chrome")).forEach((el) => el.remove());
+    const chromeG = document.createElementNS(NS, "g");
+    chromeG.setAttribute("class", "chrome");
+    svg.insertBefore(chromeG, document.getElementById("rulesLayer"));
+
+    const rect = document.createElementNS(NS, "rect");
+    rect.setAttribute("x", String(COURT_LEFT)); rect.setAttribute("y", String(COURT_TOP));
+    rect.setAttribute("width", String(COURT_SIZE)); rect.setAttribute("height", String(COURT_SIZE));
+    rect.setAttribute("rx", "10");
+    rect.setAttribute("fill", "#2563EB");
+    rect.setAttribute("stroke", "#1D4ED8");
+    rect.setAttribute("stroke-width", "2");
+    chromeG.appendChild(rect);
+
+    // Netz = Mittellinie des Gesamtfelds
+    const net = document.createElementNS(NS, "line");
+    net.setAttribute("x1", String(COURT_LEFT)); net.setAttribute("y1", String(COURT_TOP));
+    net.setAttribute("x2", String(COURT_RIGHT)); net.setAttribute("y2", String(COURT_TOP));
+    net.setAttribute("stroke", "#FFFFFF"); net.setAttribute("stroke-width", "5");
+    net.setAttribute("stroke-linecap", "round");
+    chromeG.appendChild(net);
+
+    const netLabel = document.createElementNS(NS, "text");
+    netLabel.setAttribute("x", "200"); netLabel.setAttribute("y", String(COURT_TOP - 10));
+    netLabel.setAttribute("text-anchor", "middle");
+    netLabel.setAttribute("font-size", "13"); netLabel.setAttribute("font-weight", "700");
+    netLabel.setAttribute("fill", "#1D4ED8");
+    netLabel.textContent = "NETZ / MITTELLINIE";
+    chromeG.appendChild(netLabel);
+
+    // 3m-Linie (Angriffslinie)
+    const attackLine = document.createElementNS(NS, "line");
+    attackLine.setAttribute("x1", String(COURT_LEFT)); attackLine.setAttribute("y1", String(ATTACK_Y));
+    attackLine.setAttribute("x2", String(COURT_RIGHT)); attackLine.setAttribute("y2", String(ATTACK_Y));
+    attackLine.setAttribute("stroke", "#FFFFFF"); attackLine.setAttribute("stroke-width", "1.8");
+    attackLine.setAttribute("stroke-dasharray", "6 5"); attackLine.setAttribute("opacity", "0.9");
+    chromeG.appendChild(attackLine);
+
+    const attackLabel = document.createElementNS(NS, "text");
+    attackLabel.setAttribute("x", String(COURT_RIGHT + 4)); attackLabel.setAttribute("y", String(ATTACK_Y + 4));
+    attackLabel.setAttribute("font-size", "9"); attackLabel.setAttribute("font-weight", "700");
+    attackLabel.setAttribute("fill", "#9CA3AF");
+    attackLabel.textContent = "3m";
+    chromeG.appendChild(attackLabel);
+
+    // Massstab-Hinweis
+    const dims = document.createElementNS(NS, "text");
+    dims.setAttribute("x", "200"); dims.setAttribute("y", String(COURT_BOTTOM + 16));
+    dims.setAttribute("text-anchor", "middle");
+    dims.setAttribute("font-size", "9.5"); dims.setAttribute("fill", "#9CA3AF");
+    dims.textContent = "Feld 9m x 9m (Vereinsfeld-Haelfte) · 3m-Linie eingezeichnet";
+    chromeG.appendChild(dims);
+  }
+
+  function toSvgPoint(evt) {
+    const pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    const ctm = svg.getScreenCTM().inverse();
+    return pt.matrixTransform(ctm);
+  }
+
+  function clampToCourt(x, y) {
+    return {
+      x: Math.max(COURT_LEFT + 24, Math.min(COURT_RIGHT - 24, x)),
+      y: Math.max(COURT_TOP + 24, Math.min(COURT_BOTTOM - 24, y)),
+    };
+  }
+
+  function renderPaths() {
+    pathsLayer.innerHTML = "";
+    state.paths.forEach((pathObj) => {
+      const d = smoothPathD(pathObj.points);
+
+      const outline = document.createElementNS(NS, "path");
+      outline.setAttribute("d", d);
+      outline.setAttribute("fill", "none");
+      outline.setAttribute("stroke", "#0F172A");
+      outline.setAttribute("stroke-width", "4.8");
+      outline.setAttribute("stroke-linecap", "round");
+      outline.setAttribute("opacity", "0.55");
+      pathsLayer.appendChild(outline);
+
+      const el = document.createElementNS(NS, "path");
+      el.setAttribute("d", d);
+      el.setAttribute("fill", "none");
+      el.setAttribute("stroke", "#FFFFFF");
+      el.setAttribute("stroke-width", "2.8");
+      el.setAttribute("stroke-dasharray", "7 5");
+      el.setAttribute("stroke-linecap", "round");
+      el.setAttribute("marker-end", "url(#arrowHead)");
+      pathsLayer.appendChild(el);
+    });
+  }
+
+  function render() {
+    playersLayer.innerHTML = "";
+    renderRuleChecks();
+    renderPaths();
+
+    state.players.forEach((p) => {
+      const g = document.createElementNS(NS, "g");
+      g.setAttribute("class", "player" + (p.id === selectedId ? " selected" : ""));
+      g.setAttribute("transform", `translate(${p.x},${p.y})`);
+      g.dataset.id = p.id;
+
+      const shadow = document.createElementNS(NS, "circle");
+      shadow.setAttribute("class", "main");
+      shadow.setAttribute("r", "19");
+      shadow.setAttribute("fill", p.color);
+      shadow.setAttribute("stroke", "#1D4ED8");
+      shadow.setAttribute("stroke-width", "2");
+      g.appendChild(shadow);
+
+      const label = document.createElementNS(NS, "text");
+      label.setAttribute("text-anchor", "middle");
+      label.setAttribute("dy", "5");
+      label.setAttribute("font-size", p.label.length > 3 ? "9.5" : "12.5");
+      label.setAttribute("font-weight", "700");
+      label.setAttribute("fill", TEXT_ON[p.color] || "#1D4ED8");
+      label.textContent = p.label;
+      g.appendChild(label);
+
+      // color-swatch handle (top-left)
+      const swatch = document.createElementNS(NS, "circle");
+      swatch.setAttribute("cx", "-15"); swatch.setAttribute("cy", "-15"); swatch.setAttribute("r", "5.5");
+      swatch.setAttribute("fill", p.color);
+      swatch.setAttribute("stroke", "#1D4ED8"); swatch.setAttribute("stroke-width", "1.2");
+      swatch.dataset.swatch = "1";
+      g.appendChild(swatch);
+
+      if (state.showNumbers && p.num) {
+        const nb = document.createElementNS(NS, "circle");
+        nb.setAttribute("cx", "14"); nb.setAttribute("cy", "14"); nb.setAttribute("r", "8.5");
+        nb.setAttribute("fill", "#1D4ED8"); nb.setAttribute("stroke", "#fff"); nb.setAttribute("stroke-width", "1.2");
+        g.appendChild(nb);
+        const nt = document.createElementNS(NS, "text");
+        nt.setAttribute("x", "14"); nt.setAttribute("y", "17.5"); nt.setAttribute("text-anchor", "middle");
+        nt.setAttribute("font-size", "9"); nt.setAttribute("font-weight", "700"); nt.setAttribute("fill", "#fff");
+        nt.textContent = p.num;
+        g.appendChild(nt);
+      }
+
+      attachHandlers(g, p);
+      playersLayer.appendChild(g);
+    });
+
+    save();
+  }
+
+  function attachHandlers(g, p) {
+    let dragging = false, moved = false;
+
+    g.addEventListener("pointerdown", (evt) => {
+      const isSwatch = evt.target.dataset && evt.target.dataset.swatch;
+      if (isSwatch) {
+        const idx = COLORS.indexOf(p.color);
+        p.color = COLORS[(idx + 1) % COLORS.length];
+        render();
+        return;
+      }
+      selectedId = p.id;
+      dragging = true; moved = false;
+      g.setPointerCapture(evt.pointerId);
+      evt.preventDefault();
+    });
+
+    g.addEventListener("pointermove", (evt) => {
+      if (!dragging) return;
+      moved = true;
+      const raw = toSvgPoint(evt);
+      const pt = clampToCourt(raw.x, raw.y);
+      p.x = pt.x; p.y = pt.y;
+      // Waehrend des Ziehens NICHT komplett neu rendern (das wuerde das
+      // gerade gezogene Element ersetzen und den Pointer-Grip verlieren) —
+      // nur die eigene Transform-Position und die Pfeile aktualisieren.
+      g.setAttribute("transform", `translate(${p.x},${p.y})`);
+      renderRuleChecks();
+    });
+
+    g.addEventListener("pointerup", (evt) => {
+      dragging = false;
+      selectedId = p.id;
+      render();
+    });
+
+    g.addEventListener("dblclick", () => {
+      const next = prompt("Beschriftung:", p.label);
+      if (next !== null && next.trim() !== "") { p.label = next.trim().slice(0, 8); render(); }
+    });
+  }
+
+  svg.addEventListener("pointerdown", (evt) => {
+    if (pathMode) return; // wird von der Capture-Phase weiter unten behandelt
+    if (evt.target === svg) { selectedId = null; render(); }
+  });
+
+  // --- Freihand-Laufweg zeichnen -------------------------------------
+  // Capture-Phase auf dem svg faengt den Klick ab, BEVOR er eine Spielerin
+  // trifft (so kann man auch ueber Kreise hinweg zeichnen), und startet pro
+  // Strich eigene window-weite move/up-Listener. Das ist robuster als
+  // setPointerCapture, das je nach Umgebung stillschweigend fehlschlagen kann.
+  function drawStrokePreview() {
+    let el = document.getElementById("strokePreview");
+    if (!el) {
+      el = document.createElementNS(NS, "polyline");
+      el.id = "strokePreview";
+      el.setAttribute("fill", "none");
+      el.setAttribute("stroke", "#F59E0B");
+      el.setAttribute("stroke-width", "1.8");
+      el.setAttribute("opacity", "0.9");
+      svg.appendChild(el);
+    }
+    el.setAttribute("points", currentStroke.map((p) => `${p.x},${p.y}`).join(" "));
+  }
+
+  function finishStroke() {
+    const raw = currentStroke;
+    currentStroke = null;
+    const preview = document.getElementById("strokePreview");
+    if (preview) preview.remove();
+    if (!raw || raw.length < 2) return;
+    const simplified = simplifyRDP(raw, 5.5);
+    if (simplified.length < 2) return;
+    state.paths.push({ points: simplified });
+    render();
+  }
+
+  svg.addEventListener("pointerdown", (evt) => {
+    if (!pathMode) return;
+    evt.stopPropagation();
+    evt.preventDefault();
+    const raw0 = toSvgPoint(evt);
+    currentStroke = [{ x: raw0.x, y: raw0.y }];
+    drawStrokePreview();
+
+    const onMove = (e2) => {
+      if (!currentStroke) return;
+      const r = toSvgPoint(e2);
+      currentStroke.push({ x: r.x, y: r.y });
+      drawStrokePreview();
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      finishStroke();
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+  }, true);
+
+  function addPlayer(label, x, y, color, num) {
+    const p = { id: uid(), label: label || "Neu", x: x || 200, y: y || 150, color: color || "#FFFFFF", num: num || "" };
+    state.players.push(p);
+    selectedId = p.id;
+    render();
+  }
+
+  // Feste Reihenfolge der Rollen im Feld (Sechseck): Zuspiel - Aussen1 -
+  // Mitte1 - Diagonal - Aussen2 - Mitte2 - zurueck zu Zuspiel. Fuer
+  // "Zuspiel auf Position n" verschiebt sich die ganze Zuordnung um n-1.
+  const ROTATION_ROLE_ORDER = ["Z", "A1", "M1", "D", "A2", "M2"];
+  const ROLE_COLOR = { Z: "#2563EB", A1: "#BBF7D0", A2: "#BBF7D0", M1: "#FDE68A", M2: "#FDE68A", D: "#FBCFE8" };
+  const ROLE_LABEL = { Z: "Z", A1: "AA", A2: "AA", M1: "MB", M2: "MB", D: "DIA" };
+
+  function rotationAssignment(n) {
+    const pos = {};
+    ROTATION_ROLE_ORDER.forEach((role, i) => {
+      const p = ((n - 1 + i) % 6) + 1;
+      pos[p] = role;
+    });
+    return pos; // { positionNummer(1-6): Rollen-Code }
+  }
+
+  function loadTemplate(rotationNum) {
+    const n = Number(rotationNum) || 1;
+    // Raster: Spalten bei 1/6, 3/6, 5/6 der Feldbreite; vorne = Mitte der
+    // 3m-Zone, hinten = Mitte der Zone dahinter.
+    const colL = COURT_LEFT + COURT_SIZE / 6, colM = COURT_LEFT + COURT_SIZE / 2, colR = COURT_LEFT + COURT_SIZE * 5 / 6;
+    const rowFront = COURT_TOP + (ATTACK_Y - COURT_TOP) / 2;
+    const rowBack = ATTACK_Y + (COURT_BOTTOM - ATTACK_Y) / 2;
+    const GRID_XY = { 4: [colL, rowFront], 3: [colM, rowFront], 2: [colR, rowFront], 5: [colL, rowBack], 6: [colM, rowBack], 1: [colR, rowBack] };
+
+    const assignment = rotationAssignment(n);
+    state.players = Object.keys(assignment).map((posNum) => {
+      const role = assignment[posNum];
+      const [x, y] = GRID_XY[posNum];
+      return { id: uid(), label: ROLE_LABEL[role], x, y, color: ROLE_COLOR[role], num: String(posNum) };
+    });
+    state.paths = [];
+    state.showNumbers = true;
+    state.showRules = true;
+    chkNumbers.checked = true;
+    chkRules.checked = true;
+    if (selRotation) selRotation.value = String(n);
+    selectedId = null;
+    render();
+  }
+
+  function clearAll() {
+    state.players = []; state.paths = [];
+    selectedId = null;
+    render();
+  }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function isValidState(parsed) {
+    if (!parsed || !Array.isArray(parsed.players)) return false;
+    if (parsed.paths && !Array.isArray(parsed.paths)) return false;
+    return parsed.players.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (isValidState(parsed)) {
+          state = parsed;
+          if (!Array.isArray(state.paths)) state.paths = [];
+          if (typeof state.showRules !== "boolean") state.showRules = true;
+          chkNumbers.checked = state.showNumbers !== false;
+          chkRules.checked = state.showRules !== false;
+          return true;
+        }
+        // gespeicherter Stand war beschädigt (bekannter Drag-Bug) -> verwerfen
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function exportPng() {
+    // blob:-URLs sind in dieser Sandbox per Content-Security-Policy blockiert
+    // (nur "self" und "data:" sind fuer Bilder erlaubt) — deshalb komplett
+    // ueber data:-URLs statt Blob/ObjectURL, sowohl beim Laden des SVGs als
+    // Bild als auch beim finalen Download.
+    drawCourtChrome();
+    const clone = svg.cloneNode(true);
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(clone);
+    const svgBase64 = btoa(unescape(encodeURIComponent(svgStr)));
+    const svgDataUrl = "data:image/svg+xml;base64," + svgBase64;
+    const img = new Image();
+    img.onload = function () {
+      const scale = 3;
+      const vb = svg.viewBox.baseVal;
+      const canvas = document.createElement("canvas");
+      canvas.width = vb.width * scale; canvas.height = vb.height * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, vb.width, vb.height);
+      ctx.drawImage(img, 0, 0);
+      const pngDataUrl = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = pngDataUrl;
+      a.download = "d6-spielfeld-diagramm.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    };
+    img.onerror = function () { alert("Export fehlgeschlagen — bitte Screenshot verwenden."); };
+    img.src = svgDataUrl;
+  }
+
+  document.getElementById("btnAdd").addEventListener("click", () => addPlayer("Neu", 200 + (Math.random()*40-20), 170 + (Math.random()*40-20), "#FFFFFF", ""));
+  document.getElementById("btnDelete").addEventListener("click", () => {
+    if (!selectedId) return;
+    state.players = state.players.filter((p) => p.id !== selectedId);
+    selectedId = null; render();
+  });
+  const btnPathMode = document.getElementById("btnPathMode");
+
+  btnPathMode.addEventListener("click", () => {
+    pathMode = !pathMode;
+    btnPathMode.classList.toggle("active", pathMode);
+    if (pathMode) { selectedId = null; render(); }
+  });
+  document.getElementById("btnClearPaths").addEventListener("click", () => { state.paths = []; render(); });
+  const selRotation = document.getElementById("selRotation");
+  selRotation.addEventListener("change", () => loadTemplate(selRotation.value));
+  document.getElementById("btnReset").addEventListener("click", () => { if (confirm("Wirklich alles löschen?")) clearAll(); });
+  document.getElementById("btnExport").addEventListener("click", exportPng);
+  chkNumbers.addEventListener("change", () => { state.showNumbers = chkNumbers.checked; render(); });
+  chkRules.addEventListener("change", () => { state.showRules = chkRules.checked; render(); });
+
+  window.addEventListener("keydown", (evt) => {
+    if ((evt.key === "Delete" || evt.key === "Backspace") && selectedId && document.activeElement === document.body) {
+      state.players = state.players.filter((p) => p.id !== selectedId);
+      selectedId = null; render();
+    }
+  });
+
+  drawCourtChrome();
+  if (!load()) loadTemplate(1); else render();
+})();
+</script>
+</body>
+</html>
