@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lernzone — VC Smash Winterthur</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Calibri, Arial, sans-serif;
+    background: #F8FAFC;
+    color: #1F2937;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 18px 16px 60px; }
+  h1 { font-size: 20px; color: #1D4ED8; margin: 0 0 2px; }
+  h2 { font-size: 16px; color: #1D4ED8; margin: 28px 0 8px; }
+  h3 { font-size: 13.5px; color: #1F2937; margin: 14px 0 6px; }
+  .sub { font-size: 12.5px; color: #6B7280; margin: 0 0 4px; }
+  a.backlink { font-size: 12.5px; color: #1D4ED8; text-decoration: none; font-weight: 600; }
+  a.backlink:hover { text-decoration: underline; }
+
+  .card {
+    background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 14px;
+  }
+
+  select, button {
+    font-family: inherit; font-size: 13px; padding: 7px 10px;
+    border-radius: 7px; border: 1px solid #93C5FD; background: #fff;
+    color: #1D4ED8; cursor: pointer; font-weight: 600;
+  }
+  button:hover { background: #DBEAFE; }
+  button.primary { background: #2563EB; color: #fff; border-color: #2563EB; }
+  button.primary:hover { background: #1D4ED8; }
+  button.active { background: #1D4ED8; color: #fff; border-color: #1D4ED8; }
+  button.small { padding: 4px 8px; font-size: 11.5px; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .toolbar label { font-size: 13px; font-weight: 600; color: #1D4ED8; display: flex; align-items: center; gap: 6px; }
+  .note { font-size: 11.5px; color: #9CA3AF; margin-top: 6px; }
+  .system-note { font-size: 12px; color: #B45309; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 7px; padding: 6px 9px; margin-top: 8px; }
+
+  .courts-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .court-box { flex: 1 1 260px; min-width: 240px; }
+  .court-box h3 { text-align: center; }
+  .court-frame { background: #fff; border: 1px solid #E5E7EB; border-radius: 10px; padding: 8px; }
+  svg.court { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
+  .player-static circle.main, .player circle.main { stroke: #1D4ED8; stroke-width: 2; }
+  .player { cursor: grab; }
+  .player:active { cursor: grabbing; }
+
+  /* Kompass */
+  .kompass-wrap { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-width: 480px; margin: 0 auto; }
+  .kompass-quad {
+    border: 2px solid #93C5FD; border-radius: 10px; padding: 12px 10px;
+    background: #EFF6FF; cursor: pointer; text-align: center; font-size: 12.5px;
+    font-weight: 700; color: #1D4ED8; transition: background .15s;
+  }
+  .kompass-quad:hover { background: #DBEAFE; }
+  .kompass-quad.active { background: #1D4ED8; color: #fff; }
+  .kompass-detail {
+    margin-top: 12px; padding: 10px 12px; background: #F8FAFC; border: 1px solid #E5E7EB;
+    border-radius: 8px; font-size: 13px; line-height: 1.5; min-height: 40px;
+  }
+
+  /* Accordion */
+  .acc-item { border: 1px solid #E5E7EB; border-radius: 8px; margin-bottom: 6px; overflow: hidden; }
+  .acc-head {
+    padding: 9px 12px; background: #F8FAFC; cursor: pointer; font-weight: 700;
+    font-size: 13px; color: #1D4ED8; display: flex; justify-content: space-between;
+  }
+  .acc-body { padding: 0 12px; max-height: 0; overflow: hidden; transition: max-height .2s ease, padding .2s ease; font-size: 12.5px; line-height: 1.5; }
+  .acc-item.open .acc-body { padding: 8px 12px 12px; max-height: 300px; }
+
+  /* Quiz */
+  .quiz-q { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .quiz-opt { display: block; width: 100%; text-align: left; margin-bottom: 6px; padding: 9px 12px; font-weight: 500; }
+  .quiz-opt.correct { background: #BBF7D0; border-color: #22C55E; color: #065F46; }
+  .quiz-opt.wrong { background: #FECACA; border-color: #EF4444; color: #991B1B; }
+  .quiz-status { font-size: 12.5px; color: #6B7280; margin-bottom: 8px; }
+
+  .footer-note { margin-top: 18px; font-size: 11.5px; color: #9CA3AF; border-top: 1px solid #E5E7EB; padding-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="backlink" href="index.html">&larr; zurück zum Spielfeld-Tool</a>
+  <h1>Lernzone</h1>
+  <p class="sub">VC Smash Winterthur &middot; Grundposition, Basisposition &amp; Annahme verstehen und üben</p>
+
+  <div class="card">
+    <div class="toolbar">
+      <label>Team / System:
+        <select id="selSystem"></select>
+      </label>
+      <span id="systemInfo" style="font-size:12.5px;color:#6B7280;"></span>
+    </div>
+    <div id="systemNote" class="system-note" style="display:none;"></div>
+  </div>
+
+  <!-- KOMPASS -->
+  <div class="card">
+    <h2>Spielphasen-Kompass</h2>
+    <p class="sub">Wo befinden wir uns gerade &mdash; und was wollen wir als Nächstes tun? Klick auf eine Phase.</p>
+    <div class="kompass-wrap" id="kompassWrap"></div>
+    <div class="kompass-detail" id="kompassDetail">Wähle oben eine Spielphase aus.</div>
+  </div>
+
+  <!-- BEGRIFFE -->
+  <div class="card">
+    <h2>Begriffe</h2>
+    <div id="accWrap"></div>
+  </div>
+
+  <!-- GRUND VS BASIS -->
+  <div class="card">
+    <h2>Grundposition vs. Basisposition</h2>
+    <div class="toolbar">
+      <label>Rotation / Zuspiel:
+        <select id="selRotationGB"></select>
+      </label>
+    </div>
+    <div class="courts-row">
+      <div class="court-box">
+        <h3>Grundposition</h3>
+        <div class="court-frame"><svg class="court" id="svgGrund" viewBox="0 0 400 372" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      </div>
+      <div class="court-box">
+        <h3>Basisposition</h3>
+        <div class="court-frame"><svg class="court" id="svgBasis" viewBox="0 0 400 372" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      </div>
+    </div>
+    <p class="note" id="gbNote"></p>
+  </div>
+
+  <!-- ANNAHME -->
+  <div class="card">
+    <h2>Annahme-Positionen</h2>
+    <p class="sub">Entwurf-Aufstellung pro Zuspiel-Rotation &mdash; frei verschiebbar. Passe die Positionen an, wie ihr sie im Training tatsächlich spielt; die Änderungen werden automatisch pro Team/Rotation gespeichert.</p>
+    <div class="toolbar" id="annahmeTabs"></div>
+    <div class="court-frame">
+      <svg class="court" id="svgAnnahme" viewBox="0 0 400 372" xmlns="http://www.w3.org/2000/svg">
+        <defs></defs>
+        <g id="annahmeRulesLayer"></g>
+        <g id="annahmePlayersLayer"></g>
+      </svg>
+    </div>
+    <div class="toolbar" style="margin-top:8px;">
+      <button id="btnAnnahmeReset" class="small">Entwurf zurücksetzen</button>
+      <button id="btnAnnahmeExport" class="primary small">Als PNG speichern</button>
+    </div>
+    <p class="note">Doppelklick auf eine Spielerin = Beschriftung ändern &middot; Ziehen = Position ändern.</p>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="card">
+    <h2>Quiz</h2>
+    <div class="quiz-status" id="quizStatus"></div>
+    <div id="quizBody"></div>
+    <div class="toolbar" style="margin-top:10px;">
+      <button id="btnQuizNext" class="primary" style="display:none;">Weiter</button>
+      <button id="btnQuizRestart" style="display:none;">Neu starten</button>
+    </div>
+  </div>
+
+  <div class="footer-note">VC Smash Winterthur &middot; Lernzone &mdash; Begriffe &amp; Spielphasenmodell nach offiziellen J+S-/Swiss-Volley-Grundlagen, in eigenen Worten zusammengefasst.</div>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+
+  // ---------- Court geometry (identisch zum Spielfeld-Tool) ----------
+  const COURT_LEFT = 50, COURT_TOP = 30, COURT_SIZE = 300;
+  const COURT_RIGHT = COURT_LEFT + COURT_SIZE, COURT_BOTTOM = COURT_TOP + COURT_SIZE;
+  const ATTACK_Y = COURT_TOP + COURT_SIZE * (3 / 9);
+
+  function drawCourtChrome(svg, opts) {
+    Array.from(svg.querySelectorAll(".chrome")).forEach((el) => el.remove());
+    const chromeG = document.createElementNS(NS, "g");
+    chromeG.setAttribute("class", "chrome");
+    svg.insertBefore(chromeG, svg.firstChild);
+
+    const rect = document.createElementNS(NS, "rect");
+    rect.setAttribute("x", COURT_LEFT); rect.setAttribute("y", COURT_TOP);
+    rect.setAttribute("width", COURT_SIZE); rect.setAttribute("height", COURT_SIZE);
+    rect.setAttribute("rx", "10"); rect.setAttribute("fill", "#2563EB");
+    rect.setAttribute("stroke", "#1D4ED8"); rect.setAttribute("stroke-width", "2");
+    chromeG.appendChild(rect);
+
+    const net = document.createElementNS(NS, "line");
+    net.setAttribute("x1", COURT_LEFT); net.setAttribute("y1", COURT_TOP);
+    net.setAttribute("x2", COURT_RIGHT); net.setAttribute("y2", COURT_TOP);
+    net.setAttribute("stroke", "#FFFFFF"); net.setAttribute("stroke-width", "5");
+    net.setAttribute("stroke-linecap", "round");
+    chromeG.appendChild(net);
+
+    if (opts && opts.showAttackLine !== false) {
+      const attackLine = document.createElementNS(NS, "line");
+      attackLine.setAttribute("x1", COURT_LEFT); attackLine.setAttribute("y1", ATTACK_Y);
+      attackLine.setAttribute("x2", COURT_RIGHT); attackLine.setAttribute("y2", ATTACK_Y);
+      attackLine.setAttribute("stroke", "#FFFFFF"); attackLine.setAttribute("stroke-width", "1.8");
+      attackLine.setAttribute("stroke-dasharray", "6 5"); attackLine.setAttribute("opacity", "0.9");
+      chromeG.appendChild(attackLine);
+    }
+  }
+
+  function drawPlayerStatic(layer, p) {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "player-static");
+    g.setAttribute("transform", `translate(${p.x},${p.y})`);
+    const c = document.createElementNS(NS, "circle");
+    c.setAttribute("class", "main"); c.setAttribute("r", "19");
+    c.setAttribute("fill", p.color || "#FFFFFF");
+    g.appendChild(c);
+    const t = document.createElementNS(NS, "text");
+    t.setAttribute("text-anchor", "middle"); t.setAttribute("dy", "5");
+    t.setAttribute("font-size", "12.5"); t.setAttribute("font-weight", "700");
+    t.setAttribute("fill", "#1D4ED8"); t.textContent = p.label;
+    g.appendChild(t);
+    if (p.num) {
+      const nb = document.createElementNS(NS, "circle");
+      nb.setAttribute("cx", "14"); nb.setAttribute("cy", "14"); nb.setAttribute("r", "8.5");
+      nb.setAttribute("fill", "#1D4ED8"); nb.setAttribute("stroke", "#fff"); nb.setAttribute("stroke-width", "1.2");
+      g.appendChild(nb);
+      const nt = document.createElementNS(NS, "text");
+      nt.setAttribute("x", "14"); nt.setAttribute("y", "17.5"); nt.setAttribute("text-anchor", "middle");
+      nt.setAttribute("font-size", "9"); nt.setAttribute("font-weight", "700"); nt.setAttribute("fill", "#fff");
+      nt.textContent = p.num; g.appendChild(nt);
+    }
+    layer.appendChild(g);
+  }
+
+  // ---------- Rollen / Rotation (6er-Systeme, identisch zum Spielfeld-Tool) ----------
+  const ROLE_ORDER_6 = ["Z", "A1", "M1", "D", "A2", "M2"];
+  const ROLE_COLOR_6 = { Z: "#2563EB", A1: "#BBF7D0", A2: "#BBF7D0", M1: "#FDE68A", M2: "#FDE68A", D: "#FBCFE8" };
+  const ROLE_LABEL_6 = { Z: "Z", A1: "AA", A2: "AA", M1: "MB", M2: "MB", D: "DIA" };
+
+  function rotationAssignment6(n) {
+    const pos = {};
+    ROLE_ORDER_6.forEach((role, i) => { pos[((n - 1 + i) % 6) + 1] = role; });
+    return pos;
+  }
+
+  const colL = COURT_LEFT + COURT_SIZE / 6, colM = COURT_LEFT + COURT_SIZE / 2, colR = COURT_LEFT + COURT_SIZE * 5 / 6;
+  const rowFront = COURT_TOP + (ATTACK_Y - COURT_TOP) / 2;
+  const rowBack = ATTACK_Y + (COURT_BOTTOM - ATTACK_Y) / 2;
+  const GRUND_GRID_6 = { 4: [colL, rowFront], 3: [colM, rowFront], 2: [colR, rowFront], 5: [colL, rowBack], 6: [colM, rowBack], 1: [colR, rowBack] };
+
+  // Basisposition (Pyramide) 6er-Systeme: 3 breit am Netz -> 2 -> 1 tief mittig.
+  const netY = COURT_TOP + 35;
+  const midY = ATTACK_Y + 25;
+  const deepY = COURT_BOTTOM - 35;
+  const leftMid = COURT_LEFT + COURT_SIZE * 0.25, rightMid = COURT_LEFT + COURT_SIZE * 0.75;
+  const BASIS_GRID_6 = { 4: [colL, netY], 3: [colM, netY], 2: [colR, netY], 5: [leftMid, midY], 1: [rightMid, midY], 6: [colM, deepY] };
+
+  // 4:4-System: 4 Positionen, Grund = Basis (identisch).
+  const col4L = COURT_LEFT + COURT_SIZE * 0.25, col4R = COURT_LEFT + COURT_SIZE * 0.75;
+  const GRID_4 = { 3: [col4L, rowFront], 2: [col4R, rowFront], 4: [col4L, rowBack], 1: [col4R, rowBack] };
+
+  function rotationAssignment4(n) {
+    // vereinfachte, generische Rollenfolge (nicht offiziell belegt) - dient nur der
+    // Veranschaulichung von Grund-/Basisform; Rollen bei Bedarf im Chat anpassen.
+    const order = ["Z", "A1", "D", "A2"];
+    const pos = {};
+    order.forEach((role, i) => { pos[((n - 1 + i) % 4) + 1] = role; });
+    return pos;
+  }
+
+  // ---------- Team/System-Masken ----------
+  const SYSTEMS = {
+    u1416: { label: "U14 / U16 (4:4)", system: "4:4", posCount: 4, libero: false },
+    u18:   { label: "U18 (6:6)", system: "6:6", posCount: 6, libero: false },
+    u20:   { label: "U20 (5:1)", system: "5:1", posCount: 6, libero: false },
+    u23:   { label: "U23 (5:1)", system: "5:1", posCount: 6, libero: false },
+    d6:    { label: "D6 (5:1)", system: "5:1", posCount: 6, libero: false },
+    d5:    { label: "D5 (5:1, mit Libero)", system: "5:1", posCount: 6, libero: true },
+    d4:    { label: "D4 (5:1, mit Libero)", system: "5:1", posCount: 6, libero: true },
+    d3:    { label: "D3 (5:1 vermutet)", system: "5:1", posCount: 6, libero: null, note: "System/Libero noch unbestätigt — bitte prüfen." },
+    d2:    { label: "D2 (5:1, mit Libero)", system: "5:1", posCount: 6, libero: true },
+    d1:    { label: "D1 (5:1, mit Libero)", system: "5:1", posCount: 6, libero: true },
+  };
+
+  const selSystem = document.getElementById("selSystem");
+  Object.keys(SYSTEMS).forEach((key) => {
+    const opt = document.createElement("option");
+    opt.value = key; opt.textContent = SYSTEMS[key].label;
+    selSystem.appendChild(opt);
+  });
+
+  let currentSystemKey = localStorage.getItem("lernzone-system") || "d6";
+  if (!SYSTEMS[currentSystemKey]) currentSystemKey = "d6";
+  selSystem.value = currentSystemKey;
+
+  function currentSystem() { return SYSTEMS[currentSystemKey]; }
+
+  function updateSystemInfo() {
+    const s = currentSystem();
+    document.getElementById("systemInfo").textContent =
+      `System: ${s.system} · ${s.posCount} Positionen` + (s.libero === true ? " · mit Libero" : s.libero === false ? " · ohne Libero" : "");
+    const noteEl = document.getElementById("systemNote");
+    if (s.note) { noteEl.style.display = "block"; noteEl.textContent = s.note; }
+    else { noteEl.style.display = "none"; }
+  }
+
+  // ---------- Kompass ----------
+  const KOMPASS_PHASES = [
+    {
+      key: "eroeffnen",
+      title: "Ballwechsel eröffnen\n(Service / Annahme)",
+      text: "Der Ballwechsel beginnt: das eigene Team serviert, oder nimmt den gegnerischen Service an. Wer annimmt, legt damit den Grundstein für den eigenen Angriffsaufbau (1. Kontakt)."
+    },
+    {
+      key: "punktmachen",
+      title: "Punkt machen\n(Offensive)",
+      text: "Nach erfolgreicher Annahme folgen Zuspiel (2. Kontakt) und Angriff (3. Kontakt). Ziel: den Ball kontrolliert und effektiv zum Punkt bringen."
+    },
+    {
+      key: "punktverhindern",
+      title: "Punkt verhindern\n(Defensive)",
+      text: "Sobald der Gegner im Ballbesitz ist, geht das eigene Team in die Basisposition — die Ausgangsstellung für Block und Verteidigung gegen den gegnerischen Angriff."
+    },
+    {
+      key: "verarbeiten",
+      title: "Ballwechsel verarbeiten",
+      text: "Nach Punktgewinn oder -verlust: ggf. neue Rotation, Wechsel zurück in Annahme- bzw. Feldposition — bereit für den nächsten Ballwechsel. Sonderfall: die Spielerin, die gerade serviert hat, wechselt direkt danach von der Angriffs- in die Abwehrhaltung (Basisposition)."
+    },
+  ];
+  const kompassWrap = document.getElementById("kompassWrap");
+  const kompassDetail = document.getElementById("kompassDetail");
+  KOMPASS_PHASES.forEach((phase) => {
+    const div = document.createElement("div");
+    div.className = "kompass-quad";
+    div.style.whiteSpace = "pre-line";
+    div.textContent = phase.title;
+    div.addEventListener("click", () => {
+      document.querySelectorAll(".kompass-quad").forEach((el) => el.classList.remove("active"));
+      div.classList.add("active");
+      kompassDetail.textContent = phase.text;
+    });
+    kompassWrap.appendChild(div);
+  });
+
+  // ---------- Begriffe-Akkordeon ----------
+  const BEGRIFFE = [
+    { t: "Grundposition", d: "Die feste Position (1–6 bzw. 1–4), die sich aus der Rotationsreihenfolge ergibt. Ändert sich nur bei einer Rotation, nicht während eines Ballwechsels." },
+    { t: "Basisposition", d: "Die Stellung, in der das Team steht, solange der Gegner im Ballbesitz ist — Ausgangslage für Block/Verteidigung. Im 4:4 identisch mit der Grundposition. Im 6:6- bzw. 5:1-System bildet sie eine „Pyramide“: drei Spielerinnen breit am Netz, dahinter zwei enger, ganz hinten eine Spielerin zentral tief." },
+    { t: "Startposition", d: "Der genaue Punkt, von dem aus eine Spielerin eine konkrete Aktion (z. B. Block, Verteidigung) startet — kann leicht von der Basisposition abweichen, je nachdem wohin der Gegner zuspielt." },
+    { t: "Annahme", d: "Der erste Ballkontakt gegen den gegnerischen Service." },
+    { t: "Abwehr / Verteidigung", d: "Die Aktion gegen einen gegnerischen Angriff (nicht gegen den Service!)." },
+    { t: "Häufige Verwechslung: Annahme vs. Basisposition", d: "Annahme ist eine Aktion (Reaktion auf den Service). Basisposition ist eine Stellung — die Ausgangslage, bevor überhaupt klar ist, ob als Nächstes Service oder Angriff kommt. Viele Spielerinnen verwechseln das am Anfang." },
+  ];
+  const accWrap = document.getElementById("accWrap");
+  BEGRIFFE.forEach((b) => {
+    const item = document.createElement("div");
+    item.className = "acc-item";
+    item.innerHTML = `<div class="acc-head">${b.t}<span>+</span></div><div class="acc-body">${b.d}</div>`;
+    item.querySelector(".acc-head").addEventListener("click", () => item.classList.toggle("open"));
+    accWrap.appendChild(item);
+  });
+
+  // ---------- Grund vs. Basis Vergleich ----------
+  const svgGrund = document.getElementById("svgGrund");
+  const svgBasis = document.getElementById("svgBasis");
+  const selRotationGB = document.getElementById("selRotationGB");
+
+  function populateRotationSelect() {
+    const s = currentSystem();
+    selRotationGB.innerHTML = "";
+    for (let n = 1; n <= s.posCount; n++) {
+      const opt = document.createElement("option");
+      opt.value = n; opt.textContent = `${n} — Zuspiel ${n}`;
+      selRotationGB.appendChild(opt);
+    }
+  }
+
+  function renderGrundBasis() {
+    const s = currentSystem();
+    const n = Number(selRotationGB.value) || 1;
+    drawCourtChrome(svgGrund); drawCourtChrome(svgBasis);
+    const grundLayer = document.createElementNS(NS, "g"); svgGrund.appendChild(grundLayer);
+    const basisLayer = document.createElementNS(NS, "g"); svgBasis.appendChild(basisLayer);
+
+    let players = [];
+    let gbNote = "";
+    if (s.posCount === 6) {
+      const assignment = rotationAssignment6(n);
+      Object.keys(assignment).forEach((posNum) => {
+        const role = assignment[posNum];
+        const [gx, gy] = GRUND_GRID_6[posNum];
+        const [bx, by] = BASIS_GRID_6[posNum];
+        players.push({ posNum, role, gx, gy, bx, by });
+      });
+      gbNote = "6:6 / 5:1: Grundposition bildet ein Rechteck (Positionsnummern wie bei den Servicezonen). Basisposition bildet eine Pyramide — 3 breit am Netz, dahinter enger werdend.";
+    } else {
+      const assignment = rotationAssignment4(n);
+      Object.keys(assignment).forEach((posNum) => {
+        const role = assignment[posNum];
+        const [gx, gy] = GRID_4[posNum];
+        players.push({ posNum, role, gx, gy, bx: gx, by: gy });
+      });
+      gbNote = "4:4: Grundposition und Basisposition sind identisch — bei nur 4 Positionen braucht es keine separate Abwehrformation.";
+    }
+
+    players.forEach((p) => {
+      drawPlayerStatic(grundLayer, { x: p.gx, y: p.gy, label: ROLE_LABEL_6[p.role] || p.role, num: p.posNum, color: ROLE_COLOR_6[p.role] || "#FFFFFF" });
+      drawPlayerStatic(basisLayer, { x: p.bx, y: p.by, label: ROLE_LABEL_6[p.role] || p.role, num: p.posNum, color: ROLE_COLOR_6[p.role] || "#FFFFFF" });
+    });
+    document.getElementById("gbNote").textContent = gbNote;
+  }
+
+  // ---------- Annahme (editierbar) ----------
+  const svgAnnahme = document.getElementById("svgAnnahme");
+  const annahmePlayersLayer = document.getElementById("annahmePlayersLayer");
+  const annahmeTabsEl = document.getElementById("annahmeTabs");
+  let annahmeRotation = 1;
+  let annahmeState = { players: [] };
+  let annahmeSelectedId = null;
+  let annahmeIdCounter = 1;
+
+  function annahmeUid() { return "a" + (annahmeIdCounter++) + "_" + Date.now().toString(36); }
+  function annahmeStorageKey() { return `lernzone-annahme-${currentSystemKey}-${annahmeRotation}`; }
+
+  function defaultAnnahmeFormation() {
+    // Generischer Entwurf (W-Form der Annehmenden, Angreifer/Zuspiel am Netz).
+    // Keine offiziell belegte, rotationsspezifische Aufstellung — dient als
+    // Ausgangspunkt zum gemeinsamen Anpassen.
+    const s = currentSystem();
+    if (s.posCount === 6) {
+      const assignment = rotationAssignment6(annahmeRotation);
+      const spotsByRole = {
+        Z: [COURT_RIGHT - 40, COURT_TOP + 45],
+        M1: [colL, COURT_TOP + 45],
+        M2: [colR - 10, COURT_TOP + 45],
+        A1: [COURT_LEFT + COURT_SIZE * 0.2, ATTACK_Y + 55],
+        D: [colM, ATTACK_Y + 70],
+        A2: [COURT_LEFT + COURT_SIZE * 0.8, ATTACK_Y + 55],
+      };
+      return Object.keys(assignment).map((posNum) => {
+        const role = assignment[posNum];
+        const [x, y] = spotsByRole[role] || [colM, rowBack];
+        return { id: annahmeUid(), label: ROLE_LABEL_6[role] || role, x, y, color: ROLE_COLOR_6[role] || "#FFFFFF", num: posNum };
+      });
+    } else {
+      const assignment = rotationAssignment4(annahmeRotation);
+      const spotsByRole = {
+        Z: [COURT_RIGHT - 40, COURT_TOP + 45],
+        D: [colM, COURT_TOP + 45],
+        A1: [COURT_LEFT + COURT_SIZE * 0.25, ATTACK_Y + 60],
+        A2: [COURT_LEFT + COURT_SIZE * 0.75, ATTACK_Y + 60],
+      };
+      return Object.keys(assignment).map((posNum) => {
+        const role = assignment[posNum];
+        const [x, y] = spotsByRole[role] || [colM, rowBack];
+        return { id: annahmeUid(), label: role, x, y, color: "#FFFFFF", num: posNum };
+      });
+    }
+  }
+
+  function clampToCourt(x, y) {
+    return { x: Math.max(COURT_LEFT + 24, Math.min(COURT_RIGHT - 24, x)), y: Math.max(COURT_TOP + 24, Math.min(COURT_BOTTOM - 24, y)) };
+  }
+  function toSvgPoint(evt) {
+    const pt = svgAnnahme.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    const ctm = svgAnnahme.getScreenCTM().inverse();
+    return pt.matrixTransform(ctm);
+  }
+
+  function renderAnnahme() {
+    drawCourtChrome(svgAnnahme);
+    annahmePlayersLayer.innerHTML = "";
+    svgAnnahme.appendChild(annahmePlayersLayer);
+    annahmeState.players.forEach((p) => {
+      const g = document.createElementNS(NS, "g");
+      g.setAttribute("class", "player" + (p.id === annahmeSelectedId ? " selected" : ""));
+      g.setAttribute("transform", `translate(${p.x},${p.y})`);
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("class", "main"); c.setAttribute("r", "19"); c.setAttribute("fill", p.color);
+      g.appendChild(c);
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("text-anchor", "middle"); t.setAttribute("dy", "5");
+      t.setAttribute("font-size", "12.5"); t.setAttribute("font-weight", "700");
+      t.setAttribute("fill", "#1D4ED8"); t.textContent = p.label;
+      g.appendChild(t);
+      if (p.num) {
+        const nb = document.createElementNS(NS, "circle");
+        nb.setAttribute("cx", "14"); nb.setAttribute("cy", "14"); nb.setAttribute("r", "8.5");
+        nb.setAttribute("fill", "#1D4ED8"); nb.setAttribute("stroke", "#fff"); nb.setAttribute("stroke-width", "1.2");
+        g.appendChild(nb);
+        const nt = document.createElementNS(NS, "text");
+        nt.setAttribute("x", "14"); nt.setAttribute("y", "17.5"); nt.setAttribute("text-anchor", "middle");
+        nt.setAttribute("font-size", "9"); nt.setAttribute("font-weight", "700"); nt.setAttribute("fill", "#fff");
+        nt.textContent = p.num; g.appendChild(nt);
+      }
+      let dragging = false;
+      g.addEventListener("pointerdown", (evt) => {
+        annahmeSelectedId = p.id; dragging = true;
+        g.setPointerCapture(evt.pointerId); evt.preventDefault();
+      });
+      g.addEventListener("pointermove", (evt) => {
+        if (!dragging) return;
+        const raw = toSvgPoint(evt);
+        const pt = clampToCourt(raw.x, raw.y);
+        p.x = pt.x; p.y = pt.y;
+        g.setAttribute("transform", `translate(${p.x},${p.y})`);
+      });
+      g.addEventListener("pointerup", () => { dragging = false; saveAnnahme(); });
+      g.addEventListener("dblclick", () => {
+        const next = prompt("Beschriftung:", p.label);
+        if (next !== null && next.trim() !== "") { p.label = next.trim().slice(0, 8); renderAnnahme(); saveAnnahme(); }
+      });
+      annahmePlayersLayer.appendChild(g);
+    });
+  }
+
+  function saveAnnahme() {
+    try { localStorage.setItem(annahmeStorageKey(), JSON.stringify(annahmeState)); } catch (e) {}
+  }
+  function loadAnnahme() {
+    try {
+      const raw = localStorage.getItem(annahmeStorageKey());
+      if (raw) { const parsed = JSON.parse(raw); if (parsed && Array.isArray(parsed.players)) { annahmeState = parsed; return true; } }
+    } catch (e) {}
+    return false;
+  }
+
+  function setupAnnahmeTabs() {
+    const s = currentSystem();
+    annahmeTabsEl.innerHTML = "";
+    const label = document.createElement("span");
+    label.style.cssText = "font-size:13px;font-weight:600;color:#1D4ED8;";
+    label.textContent = "Rotation:";
+    annahmeTabsEl.appendChild(label);
+    for (let n = 1; n <= s.posCount; n++) {
+      const btn = document.createElement("button");
+      btn.className = "small" + (n === annahmeRotation ? " active" : "");
+      btn.textContent = n;
+      btn.addEventListener("click", () => { annahmeRotation = n; loadOrDefaultAnnahme(); setupAnnahmeTabs(); });
+      annahmeTabsEl.appendChild(btn);
+    }
+  }
+
+  function loadOrDefaultAnnahme() {
+    annahmeSelectedId = null;
+    if (!loadAnnahme()) { annahmeState = { players: defaultAnnahmeFormation() }; saveAnnahme(); }
+    renderAnnahme();
+  }
+
+  document.getElementById("btnAnnahmeReset").addEventListener("click", () => {
+    if (!confirm("Entwurf für diese Rotation auf die Standard-Ausgangslage zurücksetzen?")) return;
+    annahmeState = { players: defaultAnnahmeFormation() };
+    saveAnnahme(); renderAnnahme();
+  });
+
+  document.getElementById("btnAnnahmeExport").addEventListener("click", () => {
+    const clone = svgAnnahme.cloneNode(true);
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    const svgStr = new XMLSerializer().serializeToString(clone);
+    const svgDataUrl = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgStr)));
+    const img = new Image();
+    img.onload = function () {
+      const scale = 3;
+      const canvas = document.createElement("canvas");
+      canvas.width = 400 * scale; canvas.height = 372 * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 400, 372);
+      ctx.drawImage(img, 0, 0);
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = `annahme-${currentSystemKey}-rotation${annahmeRotation}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+    };
+    img.onerror = function () { alert("Export fehlgeschlagen — bitte Screenshot verwenden."); };
+    img.src = svgDataUrl;
+  });
+
+  // ---------- Quiz ----------
+  const QUIZ_QUESTIONS = [
+    { q: "In welchem Spielsystem sind Grundposition und Basisposition identisch?", opts: ["4:4", "5:1", "6:6", "Nie"], correct: 0 },
+    { q: "Welche Form bildet die Basisposition im 6:6- oder 5:1-System?", opts: ["Kreis", "Pyramide", "Linie", "Rechteck"], correct: 1 },
+    { q: "Welche Form bildet die Grundposition (nach Rotationsreihenfolge) im 6:6/5:1-System?", opts: ["Pyramide", "Rechteck", "Dreieck", "Zickzack"], correct: 1 },
+    { q: "Was ist die Annahme?", opts: ["Die Stellung vor dem gegnerischen Angriff", "Der erste Ballkontakt gegen den Service", "Der Zuspiel-Kontakt", "Die Positionswahl nach einem Punkt"], correct: 1 },
+    { q: "Wann steht ein Team in der Basisposition?", opts: ["Wenn es selbst angreift", "Wenn der Gegner im Ballbesitz ist", "Nur nach jedem Punkt", "Nur beim eigenen Service"], correct: 1 },
+    { q: "Was unterscheidet die Startposition von der Basisposition?", opts: ["Nichts, ist dasselbe", "Die Startposition ist der genaue Punkt für eine konkrete Aktion und kann von der Basisposition abweichen", "Die Startposition gilt nur für die Zuspielerin", "Die Startposition ändert sich nie"], correct: 1 },
+    { q: "Ein Team hat gerade serviert. Was macht die Servicespielerin direkt danach laut Spielphasenmodell?", opts: ["Bleibt in Angriffsposition", "Wechselt sofort in die Abwehr-/Basisposition", "Verlässt das Feld", "Nichts ändert sich"], correct: 1 },
+    { q: "Ein Ball kommt nach einem gegnerischen Angriffsschlag — wie heisst die Aktion dagegen?", opts: ["Annahme", "Abwehr / Verteidigung", "Zuspiel", "Service"], correct: 1 },
+  ];
+  let quizOrder = [], quizIndex = 0, quizScore = 0, quizAnswered = false;
+
+  function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  function startQuiz() {
+    quizOrder = shuffle(QUIZ_QUESTIONS.map((_, i) => i));
+    quizIndex = 0; quizScore = 0; quizAnswered = false;
+    document.getElementById("btnQuizRestart").style.display = "none";
+    renderQuiz();
+  }
+
+  function renderQuiz() {
+    const body = document.getElementById("quizBody");
+    const status = document.getElementById("quizStatus");
+    const nextBtn = document.getElementById("btnQuizNext");
+    if (quizIndex >= quizOrder.length) {
+      status.textContent = "";
+      body.innerHTML = `<p style="font-size:15px;font-weight:700;">Ergebnis: ${quizScore} / ${quizOrder.length} richtig</p>`;
+      nextBtn.style.display = "none";
+      document.getElementById("btnQuizRestart").style.display = "inline-block";
+      return;
+    }
+    status.textContent = `Frage ${quizIndex + 1} / ${quizOrder.length} · Punkte: ${quizScore}`;
+    const q = QUIZ_QUESTIONS[quizOrder[quizIndex]];
+    body.innerHTML = "";
+    const qEl = document.createElement("div"); qEl.className = "quiz-q"; qEl.textContent = q.q;
+    body.appendChild(qEl);
+    quizAnswered = false;
+    nextBtn.style.display = "none";
+    q.opts.forEach((opt, i) => {
+      const b = document.createElement("button");
+      b.className = "quiz-opt"; b.textContent = opt;
+      b.addEventListener("click", () => {
+        if (quizAnswered) return;
+        quizAnswered = true;
+        Array.from(body.querySelectorAll(".quiz-opt")).forEach((el, idx) => {
+          if (idx === q.correct) el.classList.add("correct");
+          else if (idx === i) el.classList.add("wrong");
+        });
+        if (i === q.correct) quizScore++;
+        nextBtn.style.display = "inline-block";
+      });
+      body.appendChild(b);
+    });
+  }
+  document.getElementById("btnQuizNext").addEventListener("click", () => { quizIndex++; renderQuiz(); });
+  document.getElementById("btnQuizRestart").addEventListener("click", startQuiz);
+
+  // ---------- Init / Events ----------
+  selSystem.addEventListener("change", () => {
+    currentSystemKey = selSystem.value;
+    localStorage.setItem("lernzone-system", currentSystemKey);
+    updateSystemInfo();
+    populateRotationSelect();
+    renderGrundBasis();
+    annahmeRotation = 1;
+    setupAnnahmeTabs();
+    loadOrDefaultAnnahme();
+  });
+  selRotationGB.addEventListener("change", renderGrundBasis);
+
+  updateSystemInfo();
+  populateRotationSelect();
+  renderGrundBasis();
+  setupAnnahmeTabs();
+  loadOrDefaultAnnahme();
+  startQuiz();
+})();
+</script>
+</body>
+</html>
