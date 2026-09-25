@@ -904,7 +904,25 @@
         nt.textContent = p.num; g.appendChild(nt);
       }
       let dragging = false;
+      let lastDownTime = 0, lastDownAt = null;
+      function renameAnnahmeLabel() {
+        const next = prompt("Beschriftung:", p.label);
+        if (next !== null && next.trim() !== "") { p.label = next.trim().slice(0, 8); renderAnnahme(); saveAnnahme(); }
+      }
       g.addEventListener("pointerdown", (evt) => {
+        // Doppelklick-/Doppeltipp-Erkennung ueber Zeit + Abstand zwischen zwei
+        // pointerdown-Events, weil setPointerCapture()/preventDefault() beim
+        // Ziehen in manchen Browsern das native "dblclick"-Event unterdrueckt.
+        const now = Date.now();
+        const raw0 = toSvgPoint(evt);
+        const closeEnough = lastDownAt && Math.hypot(raw0.x - lastDownAt.x, raw0.y - lastDownAt.y) < 12;
+        if (now - lastDownTime < 400 && closeEnough) {
+          lastDownTime = 0; lastDownAt = null;
+          renameAnnahmeLabel();
+          return;
+        }
+        lastDownTime = now; lastDownAt = raw0;
+
         annahmeSelectedId = p.id; dragging = true;
         annahmeFeedback = {}; annahmeStatusEl.className = "annahme-status";
         g.setPointerCapture(evt.pointerId); evt.preventDefault();
@@ -917,10 +935,7 @@
         g.setAttribute("transform", `translate(${p.x},${p.y})`);
       });
       g.addEventListener("pointerup", () => { dragging = false; saveAnnahme(); });
-      g.addEventListener("dblclick", () => {
-        const next = prompt("Beschriftung:", p.label);
-        if (next !== null && next.trim() !== "") { p.label = next.trim().slice(0, 8); renderAnnahme(); saveAnnahme(); }
-      });
+      g.addEventListener("dblclick", (evt) => { evt.preventDefault(); });
       annahmePlayersLayer.appendChild(g);
     });
   }

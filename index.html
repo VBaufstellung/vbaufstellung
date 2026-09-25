@@ -414,6 +414,12 @@
 
   function attachHandlers(g, p) {
     let dragging = false, moved = false;
+    let lastDownTime = 0, lastDownAt = null;
+
+    function renameLabel() {
+      const next = prompt("Beschriftung:", p.label);
+      if (next !== null && next.trim() !== "") { p.label = next.trim().slice(0, 8); render(); }
+    }
 
     g.addEventListener("pointerdown", (evt) => {
       const isSwatch = evt.target.dataset && evt.target.dataset.swatch;
@@ -423,6 +429,20 @@
         render();
         return;
       }
+
+      // Doppelklick-/Doppeltipp-Erkennung ueber Zeit + Abstand zwischen zwei
+      // pointerdown-Events, weil setPointerCapture()/preventDefault() beim
+      // Ziehen in manchen Browsern das native "dblclick"-Event unterdrueckt.
+      const now = Date.now();
+      const raw = toSvgPoint(evt);
+      const closeEnough = lastDownAt && Math.hypot(raw.x - lastDownAt.x, raw.y - lastDownAt.y) < 12;
+      if (now - lastDownTime < 400 && closeEnough) {
+        lastDownTime = 0; lastDownAt = null;
+        renameLabel();
+        return;
+      }
+      lastDownTime = now; lastDownAt = raw;
+
       selectedId = p.id;
       dragging = true; moved = false;
       g.setPointerCapture(evt.pointerId);
@@ -448,9 +468,10 @@
       render();
     });
 
-    g.addEventListener("dblclick", () => {
-      const next = prompt("Beschriftung:", p.label);
-      if (next !== null && next.trim() !== "") { p.label = next.trim().slice(0, 8); render(); }
+    g.addEventListener("dblclick", (evt) => {
+      // Fallback fuer Browser, bei denen "dblclick" doch feuert — verhindert
+      // dort ein doppeltes Prompt-Fenster durch die eigene Erkennung oben.
+      evt.preventDefault();
     });
   }
 
