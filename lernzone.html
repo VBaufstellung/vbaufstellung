@@ -282,7 +282,7 @@
     netLabel.textContent = "NETZ / MITTELLINIE";
     chromeG.appendChild(netLabel);
 
-    if (opts && opts.showAttackLine !== false) {
+    if (!opts || opts.showAttackLine !== false) {
       const attackLine = document.createElementNS(NS, "line");
       attackLine.setAttribute("x1", COURT_LEFT); attackLine.setAttribute("y1", ATTACK_Y);
       attackLine.setAttribute("x2", COURT_RIGHT); attackLine.setAttribute("y2", ATTACK_Y);
