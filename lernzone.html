@@ -170,11 +170,12 @@
   <!-- GRUND VS BASIS -->
   <div class="card">
     <h2>Grundposition vs. Basisposition</h2>
-    <div class="toolbar">
+    <div class="toolbar" id="gbRotationToolbar">
       <label>Rotation / Zuspiel:
         <select id="selRotationGB"></select>
       </label>
     </div>
+    <p class="note" id="gbFixedNote" style="display:none;margin-top:0;"></p>
     <div class="courts-row">
       <div class="court-box">
         <h3>Grundposition</h3>
@@ -193,11 +194,12 @@
   <div class="card">
     <h2>Alle Rotationen im Überblick</h2>
     <p class="sub">Rotation wählen, dann Karte umdrehen &mdash; Grundposition, Basisposition und Annahme im Vergleich.</p>
-    <div class="toolbar">
+    <div class="toolbar" id="overviewRotationToolbar">
       <label>Rotation:
         <select id="selOverviewRotation"></select>
       </label>
     </div>
+    <p class="note" id="overviewFixedNote" style="display:none;"></p>
     <div class="flip-row" id="flipRow"></div>
   </div>
 
@@ -206,6 +208,7 @@
     <h2>Annahme-Positionen üben</h2>
     <p class="sub">Rotation wählen, Spielerinnen möglichst nah an die Vorlage ziehen, dann prüfen. Bei "richtig" geht's automatisch zur nächsten Rotation weiter.</p>
     <div class="toolbar" id="annahmeTabs"></div>
+    <p class="note" id="annahmeFixedNote" style="display:none;"></p>
     <div class="annahme-practice-row">
       <div class="court-box">
         <h3 style="text-align:center;">Deine Aufstellung</h3>
@@ -341,6 +344,21 @@
     const pos = {};
     ROLE_ORDER_6.forEach((role, i) => { pos[((n - 1 + i) % 6) + 1] = role; });
     return pos;
+  }
+
+  // 6:6-System: keine fixe Zuspielerin, die durchrotiert — die Spielrolle
+  // ergibt sich direkt aus der Feldposition (Pos. 1 = Zuspiel/hinten, Pos. 2 =
+  // Dia, Pos. 3 = MB, Pos. 4 = Aussen, Pos. 5 = MB/Libero, Pos. 6 = Aussen).
+  // Diese Zuordnung ist für JEDE Rotation identisch (entspricht "Läufer 1").
+  const ROLE_BY_POS_66 = { 1: "Z", 2: "D", 3: "M1", 4: "A1", 5: "M2", 6: "A2" };
+  function rotationAssignment66() {
+    return Object.assign({}, ROLE_BY_POS_66);
+  }
+  function isFixedRoleSystem(s) { return s.system === "6:6"; }
+  // Liefert die Rollenzuordnung für ein 6er-System: 6:6 -> immer fixe
+  // Positions-Rolle, 5:1 -> rotiert mit der fixen Zuspielerin (n = Rotation).
+  function roleAssignment6(s, n) {
+    return isFixedRoleSystem(s) ? rotationAssignment66() : rotationAssignment6(n);
   }
 
   const colL = COURT_LEFT + COURT_SIZE / 6, colM = COURT_LEFT + COURT_SIZE / 2, colR = COURT_LEFT + COURT_SIZE * 5 / 6;
@@ -618,9 +636,18 @@
 
   function renderGrundBasis() {
     const s = currentSystem();
-    const n = Number(selRotationGB.value) || 1;
+    const fixedRole = isFixedRoleSystem(s);
+    const n = fixedRole ? 1 : (Number(selRotationGB.value) || 1);
     drawCourtChrome(svgGrund);
     const grundLayer = document.createElementNS(NS, "g"); svgGrund.appendChild(grundLayer);
+
+    const gbRotationToolbar = document.getElementById("gbRotationToolbar");
+    const gbFixedNote = document.getElementById("gbFixedNote");
+    gbRotationToolbar.style.display = fixedRole ? "none" : "flex";
+    gbFixedNote.style.display = fixedRole ? "block" : "none";
+    if (fixedRole) {
+      gbFixedNote.textContent = "Im 6:6 gibt es keine fixe Zuspielposition — die Spielrolle ergibt sich direkt aus der Feldposition (Pos. 1 = Zuspiel, hinten; Pos. 2 = Dia; Pos. 3 = MB; Pos. 4 = Aussen; Pos. 5 = MB/Libero; Pos. 6 = Aussen). Grundposition, Basisposition und Annahme sind deshalb für jede Rotation identisch.";
+    }
 
     let players = [];
     let gbNote = "";
@@ -629,7 +656,7 @@
     const basisNote = document.getElementById("basisNote");
 
     if (s.posCount === 6) {
-      const assignment = rotationAssignment6(n);
+      const assignment = roleAssignment6(s, n);
       Object.keys(assignment).forEach((posNum) => {
         const role = assignment[posNum];
         const [gx, gy] = GRUND_GRID_6[posNum];
@@ -637,11 +664,14 @@
       });
       gbNote = "6:6 / 5:1: Grundposition bildet ein Rechteck (Positionsnummern wie bei den Servicezonen). Basisposition hängt davon ab, ob unsere eigene Zuspielerin in dieser Rotation vorne oder hinten steht — das Bild rechts wechselt automatisch je nach gewählter Rotation.";
 
-      const isBack = [1, 5, 6].includes(n);
+      // Position der Zuspielerin: im 6:6 fix auf Pos. 1 (= hinten), im 5:1
+      // rotiert die Zuspielerin mit — ihre Position entspricht der Rotation n.
+      const zPos = fixedRole ? 1 : n;
+      const isBack = [1, 5, 6].includes(zPos);
       basisImgWrap.style.display = "block";
       basisImg.src = isBack ? "basis-hinten-v2.png" : "basis-vorne.png";
       basisImg.alt = isBack ? "Basisposition, Pass hinten" : "Basisposition, Pass vorne";
-      basisNote.textContent = `Zuspielerin steht in dieser Rotation ${isBack ? "hinten (Position " + n + ")" : "vorne (Position " + n + ")"} — entsprechend die Basisposition "${isBack ? "Pass hinten" : "Pass vorne"}":`;
+      basisNote.textContent = `Zuspielerin steht ${fixedRole ? "im 6:6 immer" : "in dieser Rotation"} ${isBack ? "hinten (Position " + zPos + ")" : "vorne (Position " + zPos + ")"} — entsprechend die Basisposition "${isBack ? "Pass hinten" : "Pass vorne"}":`;
     } else {
       const assignment = rotationAssignment4(n);
       Object.keys(assignment).forEach((posNum) => {
@@ -709,8 +739,17 @@
 
   function renderOverview() {
     const s = currentSystem();
-    const n = Number(selOverviewRotation.value) || 1;
+    const fixedRole = isFixedRoleSystem(s);
+    const n = fixedRole ? 1 : (Number(selOverviewRotation.value) || 1);
     flipRow.innerHTML = "";
+
+    const overviewRotationToolbar = document.getElementById("overviewRotationToolbar");
+    const overviewFixedNote = document.getElementById("overviewFixedNote");
+    overviewRotationToolbar.style.display = fixedRole ? "none" : "flex";
+    overviewFixedNote.style.display = fixedRole ? "block" : "none";
+    if (fixedRole) {
+      overviewFixedNote.textContent = "Im 6:6 gibt es keine fixe Zuspielposition — die Spielrolle ergibt sich direkt aus der Feldposition. Grundposition, Basisposition und Annahme sind deshalb für jede Rotation identisch.";
+    }
 
     const grundCard = buildFlipCard("grund", "Grundposition");
     const basisCard = buildFlipCard("basis", "Basisposition");
@@ -719,7 +758,7 @@
 
     let players = [];
     if (s.posCount === 6) {
-      const assignment = rotationAssignment6(n);
+      const assignment = roleAssignment6(s, n);
       Object.keys(assignment).forEach((posNum) => {
         const role = assignment[posNum];
         players.push({ posNum, role, g: GRUND_GRID_6[posNum] });
@@ -748,11 +787,12 @@
     fillCourtCard(grundCard);
 
     if (s.posCount === 6) {
-      const isBack = [1, 5, 6].includes(n);
+      const zPos = fixedRole ? 1 : n;
+      const isBack = [1, 5, 6].includes(zPos);
       const basisContent = basisCard.querySelector(".fb-content");
       basisContent.innerHTML = `
         <div style="text-align:center;height:100%;">
-          <div style="font-size:10px;font-weight:700;color:#1D4ED8;margin-bottom:4px;">${isBack ? "Pass hinten" : "Pass vorne"} (Zuspiel Pos. ${n})</div>
+          <div style="font-size:10px;font-weight:700;color:#1D4ED8;margin-bottom:4px;">${isBack ? "Pass hinten" : "Pass vorne"} (Zuspiel Pos. ${zPos})</div>
           <img src="${isBack ? "basis-hinten-v2.png" : "basis-vorne.png"}" style="max-width:100%;max-height:200px;object-fit:contain;">
         </div>`;
     } else {
@@ -807,7 +847,7 @@
     // korrekte Annahme-Formation ziehen.
     const s = currentSystem();
     if (s.posCount === 6) {
-      const assignment = rotationAssignment6(annahmeRotation);
+      const assignment = roleAssignment6(s, annahmeRotation);
       return Object.keys(assignment).map((posNum) => {
         const role = assignment[posNum];
         const [x, y] = GRUND_GRID_6[posNum];
@@ -898,6 +938,17 @@
 
   function setupAnnahmeTabs() {
     const s = currentSystem();
+    const fixedRole = isFixedRoleSystem(s);
+    const annahmeFixedNote = document.getElementById("annahmeFixedNote");
+    if (fixedRole) {
+      annahmeRotation = 1;
+      annahmeTabsEl.style.display = "none";
+      annahmeFixedNote.style.display = "block";
+      annahmeFixedNote.textContent = "Im 6:6 gibt es keine fixe Zuspielposition — die Zuspielerin steht immer auf Position 1 (hinten). Grundposition, Basisposition und Annahme entsprechen deshalb immer diesem einen Schema (\"Läufer 1\").";
+      return;
+    }
+    annahmeTabsEl.style.display = "flex";
+    annahmeFixedNote.style.display = "none";
     const solved = getAnnahmeSolved();
     annahmeTabsEl.innerHTML = "";
     const label = document.createElement("span");
