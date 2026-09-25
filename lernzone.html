@@ -13,6 +13,27 @@
     background: #F8FAFC;
     color: #1F2937;
   }
+  a { color: inherit; }
+
+  /* ---- Site Header ---- */
+  .site-header { position: sticky; top: 0; z-index: 50; background: #1D4ED8; box-shadow: 0 1px 0 rgba(0,0,0,0.08); }
+  .site-header-inner { max-width: 1040px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
+  .brand-badge { width: 34px; height: 34px; flex-shrink: 0; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.08; }
+  .brand-text strong { font-size: 15px; font-weight: 800; letter-spacing: 0.2px; }
+  .brand-text small { font-size: 10.5px; font-weight: 600; opacity: 0.85; }
+  .site-nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  .site-nav a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 7px; transition: background .15s, color .15s; }
+  .site-nav a:hover { background: rgba(255,255,255,0.14); color: #fff; }
+  .site-nav a.active { background: #fff; color: #1D4ED8; }
+
+  /* ---- Site Footer ---- */
+  .site-footer { margin-top: 30px; border-top: 1px solid #E5E7EB; background: #fff; }
+  .site-footer-inner { max-width: 1040px; margin: 0 auto; padding: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; font-size: 11.5px; color: #9CA3AF; }
+  .site-footer-inner a { color: #1D4ED8; text-decoration: none; font-weight: 600; }
+  .site-footer-inner a:hover { text-decoration: underline; }
+
   .wrap { max-width: 900px; margin: 0 auto; padding: 18px 16px 60px; }
   h1 { font-size: 20px; color: #1D4ED8; margin: 0 0 2px; }
   h2 { font-size: 16px; color: #1D4ED8; margin: 28px 0 8px; }
@@ -128,8 +149,25 @@
 </style>
 </head>
 <body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="index.html" class="brand">
+      <svg class="brand-badge" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="30" cy="30" r="27" fill="none" stroke="#fff" stroke-width="3"></circle>
+        <text x="30" y="36" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="16" font-weight="700" fill="#fff">Smash</text>
+      </svg>
+      <span class="brand-text"><strong>VC Smash</strong><small>Winterthur</small></span>
+    </a>
+    <nav class="site-nav">
+      <a href="index.html">Home</a>
+      <a href="spielfeld.html">Spielfeld-Tool</a>
+      <a href="lernzone.html" class="active">Lernzone</a>
+    </nav>
+  </div>
+</header>
+
 <div class="wrap">
-  <a class="backlink" href="index.html">&larr; zurück zum Spielfeld-Tool</a>
   <h1>Lernzone</h1>
   <p class="sub">VC Smash Winterthur &middot; Grundposition, Basisposition &amp; Annahme verstehen und üben</p>
 
@@ -247,6 +285,13 @@
 
   <div class="footer-note">VC Smash Winterthur &middot; Lernzone &mdash; Begriffe &amp; Spielphasenmodell nach offiziellen J+S-/Swiss-Volley-Grundlagen, in eigenen Worten zusammengefasst.</div>
 </div>
+
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <span>VC Smash Winterthur — Taktik- &amp; Lern-Tools für alle Teams</span>
+    <a href="https://vc-smash.ch" target="_blank" rel="noopener">vc-smash.ch ↗</a>
+  </div>
+</footer>
 
 <script>
 (function () {
