@@ -63,9 +63,20 @@
   .kompass-needle:active { cursor: grabbing; }
   .kompass-wedge { cursor: pointer; }
   .kompass-wedge-label { font-size: 11px; font-weight: 700; fill: #fff; pointer-events: none; }
+  .kompass-sublabel { font-size: 7.5px; font-weight: 600; fill: rgba(255,255,255,0.9); pointer-events: none; }
+  .kompass-marker-circle { fill: #6B7280; stroke: #fff; stroke-width: 1.5; }
+  .kompass-marker-text { font-size: 10px; font-weight: 700; fill: #fff; text-anchor: middle; pointer-events: none; }
+  .kompass-tag-bg { fill: #111827; }
+  .kompass-tag-text { font-size: 9px; font-weight: 700; fill: #fff; text-anchor: middle; pointer-events: none; }
   .kompass-detail {
     margin-top: 12px; padding: 10px 12px; background: #F8FAFC; border: 1px solid #E5E7EB;
     border-radius: 8px; font-size: 13px; line-height: 1.5; min-height: 40px;
+  }
+  .kompass-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; font-size: 11.5px; color: #374151; }
+  .kompass-legend-item { display: flex; align-items: center; gap: 5px; }
+  .kompass-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 700;
   }
 
   /* Accordion */
@@ -108,10 +119,17 @@
     <h2>Spielphasen-Kompass</h2>
     <p class="sub">Wo befinden wir uns gerade &mdash; und wie/was wollen wir als Nächstes spielen? Ziehe die Nadel auf die aktuelle Phase.</p>
     <div class="kompass-svg-wrap">
-      <svg id="kompassSvg" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="kompassSvg" viewBox="0 0 340 340" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
     <div class="kompass-detail" id="kompassDetail">Wähle oben eine Spielphase aus.</div>
-    <p class="note">Konzept angelehnt an das Spielphasenmodell von Swiss Volley / J+S-Manual Volleyball (eigene, vereinfachte Darstellung, keine 1:1-Kopie der Originalgrafik) &middot; Quelle: Swiss Volley.</p>
+    <div class="kompass-legend">
+      <span class="kompass-legend-item"><span class="kompass-badge" style="background:#6B7280;">1</span> 1. Ballkontakt</span>
+      <span class="kompass-legend-item"><span class="kompass-badge" style="background:#6B7280;">2</span> 2. Ballkontakt</span>
+      <span class="kompass-legend-item"><span class="kompass-badge" style="background:#6B7280;">3</span> 3. Ballkontakt</span>
+      <span class="kompass-legend-item"><span class="kompass-badge" style="background:#6B7280;">B</span> Basisposition</span>
+      <span class="kompass-legend-item"><span class="kompass-badge" style="background:#6B7280;">S</span> Startposition (Verteidigung/Block)</span>
+    </div>
+    <p class="note">Eigene Darstellung, inhaltlich angelehnt an das Spielphasenmodell von Swiss Volley / J+S-Manual Volleyball &mdash; keine Kopie der Originalgrafik. Quelle der Begrifflichkeiten: Swiss Volley.</p>
   </div>
 
   <!-- BEGRIFFE -->
@@ -322,22 +340,26 @@
   const KOMPASS_PHASES = [
     {
       angle: 0, color: "#DC2626", title: "Punkt machen",
+      sub: ["Zuspiel & Angriff", "abschliessen"],
       text: "Nach erfolgreicher Annahme folgen Zuspiel (2. Kontakt) und Angriff (3. Kontakt). Ziel: den Ball kontrolliert und effektiv zum Punkt bringen."
     },
     {
       angle: 90, color: "#93C5FD", title: "Ballwechsel eröffnen (Service)",
+      sub: ["Service", "Verteidigung organisieren"],
       text: "Das eigene Team serviert (1. Kontakt beim Gegner). Direkt danach wechselt die Servicespielerin von der Angriffs- in die Abwehrhaltung — sie geht in die Basisposition."
     },
     {
       angle: 180, color: "#1D4ED8", title: "Punkt verhindern",
+      sub: ["Verteidigen & blocken", "vorbereiten"],
       text: "Der Gegner ist im Ballbesitz: das eigene Team steht in der Basisposition — der Ausgangslage für Block und Verteidigung gegen den gegnerischen Angriff."
     },
     {
       angle: 270, color: "#F87171", title: "Ballwechsel eröffnen (Annahme)",
+      sub: ["Annahme organisieren", "Angriff einleiten"],
       text: "Das eigene Team nimmt den gegnerischen Service an (1. Kontakt). Wer annimmt, legt damit den Grundstein für den eigenen Angriffsaufbau."
     },
   ];
-  const KOMPASS_CX = 160, KOMPASS_CY = 160, KOMPASS_R = 150, KOMPASS_HUB = 34;
+  const KOMPASS_CX = 170, KOMPASS_CY = 170, KOMPASS_R = 150, KOMPASS_HUB = 34;
 
   function polarPt(cx, cy, r, deg) {
     const rad = (deg * Math.PI) / 180;
@@ -391,7 +413,55 @@
         label.appendChild(tspan);
       });
       kompassSvg.appendChild(label);
+
+      // Sub-Labels (zwei kurze Stichworte, an den Rand der Sektorhälften gesetzt)
+      [-25, 25].forEach((offset, i) => {
+        const subPt = polarPt(KOMPASS_CX, KOMPASS_CY, KOMPASS_R * 0.94, phase.angle + offset);
+        const subText = document.createElementNS(NS, "text");
+        subText.setAttribute("x", subPt.x); subText.setAttribute("y", subPt.y);
+        subText.setAttribute("text-anchor", "middle"); subText.setAttribute("class", "kompass-sublabel");
+        subText.setAttribute("transform", `rotate(${phase.angle + offset + (phase.angle + offset > 90 && phase.angle + offset < 270 ? 180 : 0)} ${subPt.x} ${subPt.y})`);
+        subText.textContent = phase.sub[i];
+        kompassSvg.appendChild(subText);
+      });
     });
+
+    // Marker: Ballkontakte 1/2/3, Basisposition (B), Startposition (S)
+    function addMarker(deg, r, text) {
+      const pt = polarPt(KOMPASS_CX, KOMPASS_CY, r, deg);
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", pt.x); c.setAttribute("cy", pt.y); c.setAttribute("r", "11");
+      c.setAttribute("class", "kompass-marker-circle");
+      kompassSvg.appendChild(c);
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("x", pt.x); t.setAttribute("y", pt.y + 3.5);
+      t.setAttribute("class", "kompass-marker-text");
+      t.textContent = text;
+      kompassSvg.appendChild(t);
+    }
+    addMarker(315, 118, "1");   // Annahme -> Punkt machen: 1. Ballkontakt
+    addMarker(350, 115, "2");   // im Punkt machen: 2. Ballkontakt (Zuspiel)
+    addMarker(45, 118, "3");    // Punkt machen -> Service: 3. Ballkontakt (Angriff)
+    addMarker(180, 65, "B");    // Punkt verhindern: Basisposition
+    addMarker(225, 118, "S");   // Punkt verhindern -> Annahme: Startposition
+
+    // Tags: Punktgewinn / Punktverlust
+    function addTag(deg, r, text) {
+      const pt = polarPt(KOMPASS_CX, KOMPASS_CY, r, deg);
+      const w = text.length * 5.6 + 12;
+      const rect = document.createElementNS(NS, "rect");
+      rect.setAttribute("x", pt.x - w / 2); rect.setAttribute("y", pt.y - 9);
+      rect.setAttribute("width", w); rect.setAttribute("height", "18"); rect.setAttribute("rx", "9");
+      rect.setAttribute("class", "kompass-tag-bg");
+      kompassSvg.appendChild(rect);
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("x", pt.x); t.setAttribute("y", pt.y + 3.5);
+      t.setAttribute("class", "kompass-tag-text");
+      t.textContent = text;
+      kompassSvg.appendChild(t);
+    }
+    addTag(45, 168, "Punktgewinn");
+    addTag(225, 168, "Punktverlust");
 
     // Hub (Mitte)
     const hub = document.createElementNS(NS, "circle");
