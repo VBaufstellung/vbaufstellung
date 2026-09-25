@@ -45,6 +45,11 @@
   .courts-row { display: flex; gap: 14px; flex-wrap: wrap; }
   .court-box { flex: 1 1 260px; min-width: 240px; }
   .court-box h3 { text-align: center; }
+  .overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .overview-cell { text-align: center; }
+  .overview-cell .court-frame { padding: 4px; }
+  .overview-cell .ov-label { font-size: 11px; font-weight: 700; color: #1D4ED8; margin-bottom: 2px; }
+  @media (max-width: 560px) { .overview-grid { grid-template-columns: repeat(2, 1fr); } }
   .court-frame { background: #fff; border: 1px solid #E5E7EB; border-radius: 10px; padding: 8px; }
   svg.court { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
   .player-static circle.main, .player circle.main { stroke: #1D4ED8; stroke-width: 2; }
@@ -52,14 +57,12 @@
   .player:active { cursor: grabbing; }
 
   /* Kompass */
-  .kompass-wrap { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-width: 480px; margin: 0 auto; }
-  .kompass-quad {
-    border: 2px solid #93C5FD; border-radius: 10px; padding: 12px 10px;
-    background: #EFF6FF; cursor: pointer; text-align: center; font-size: 12.5px;
-    font-weight: 700; color: #1D4ED8; transition: background .15s;
-  }
-  .kompass-quad:hover { background: #DBEAFE; }
-  .kompass-quad.active { background: #1D4ED8; color: #fff; }
+  .kompass-svg-wrap { max-width: 340px; margin: 0 auto; }
+  #kompassSvg { width: 100%; height: auto; touch-action: none; user-select: none; }
+  .kompass-needle { cursor: grab; }
+  .kompass-needle:active { cursor: grabbing; }
+  .kompass-wedge { cursor: pointer; }
+  .kompass-wedge-label { font-size: 11px; font-weight: 700; fill: #fff; pointer-events: none; }
   .kompass-detail {
     margin-top: 12px; padding: 10px 12px; background: #F8FAFC; border: 1px solid #E5E7EB;
     border-radius: 8px; font-size: 13px; line-height: 1.5; min-height: 40px;
@@ -103,9 +106,12 @@
   <!-- KOMPASS -->
   <div class="card">
     <h2>Spielphasen-Kompass</h2>
-    <p class="sub">Wo befinden wir uns gerade &mdash; und was wollen wir als Nächstes tun? Klick auf eine Phase.</p>
-    <div class="kompass-wrap" id="kompassWrap"></div>
+    <p class="sub">Wo befinden wir uns gerade &mdash; und wie/was wollen wir als Nächstes spielen? Ziehe die Nadel auf die aktuelle Phase.</p>
+    <div class="kompass-svg-wrap">
+      <svg id="kompassSvg" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
     <div class="kompass-detail" id="kompassDetail">Wähle oben eine Spielphase aus.</div>
+    <p class="note">Konzept angelehnt an das Spielphasenmodell von Swiss Volley / J+S-Manual Volleyball (eigene, vereinfachte Darstellung, keine 1:1-Kopie der Originalgrafik) &middot; Quelle: Swiss Volley.</p>
   </div>
 
   <!-- BEGRIFFE -->
@@ -133,6 +139,16 @@
       </div>
     </div>
     <p class="note" id="gbNote"></p>
+  </div>
+
+  <!-- ALLE ROTATIONEN UEBERSICHT -->
+  <div class="card">
+    <h2>Alle Rotationen im Überblick</h2>
+    <p class="sub">Grundposition (Rechteck) und Basisposition (Pyramide, Quelle: volleyballswissmade.ch) für jede Rotation auf einen Blick.</p>
+    <h3 style="text-align:center;">Grundposition</h3>
+    <div class="overview-grid" id="overviewGrund"></div>
+    <h3 style="text-align:center;margin-top:18px;">Basisposition</h3>
+    <div class="overview-grid" id="overviewBasis"></div>
   </div>
 
   <!-- ANNAHME -->
@@ -269,18 +285,11 @@
     return pos;
   }
 
-  // ---------- Team/System-Masken ----------
+  // ---------- System-Masken (nach Spielsystem, nicht pro Team) ----------
   const SYSTEMS = {
-    u1416: { label: "U14 / U16 (4:4)", system: "4:4", posCount: 4, libero: false },
-    u18:   { label: "U18 (6:6)", system: "6:6", posCount: 6, libero: false },
-    u20:   { label: "U20 (5:1)", system: "5:1", posCount: 6, libero: false },
-    u23:   { label: "U23 (5:1)", system: "5:1", posCount: 6, libero: false },
-    d6:    { label: "D6 (5:1)", system: "5:1", posCount: 6, libero: false },
-    d5:    { label: "D5 (5:1, mit Libero)", system: "5:1", posCount: 6, libero: true },
-    d4:    { label: "D4 (5:1, mit Libero)", system: "5:1", posCount: 6, libero: true },
-    d3:    { label: "D3 (5:1 vermutet)", system: "5:1", posCount: 6, libero: null, note: "System/Libero noch unbestätigt — bitte prüfen." },
-    d2:    { label: "D2 (5:1, mit Libero)", system: "5:1", posCount: 6, libero: true },
-    d1:    { label: "D1 (5:1, mit Libero)", system: "5:1", posCount: 6, libero: true },
+    s44: { label: "4:4", system: "4:4", posCount: 4 },
+    s66: { label: "6:6", system: "6:6", posCount: 6 },
+    s51: { label: "5:1", system: "5:1", posCount: 6 },
   };
 
   const selSystem = document.getElementById("selSystem");
@@ -290,58 +299,154 @@
     selSystem.appendChild(opt);
   });
 
-  let currentSystemKey = localStorage.getItem("lernzone-system") || "d6";
-  if (!SYSTEMS[currentSystemKey]) currentSystemKey = "d6";
+  let currentSystemKey = localStorage.getItem("lernzone-system") || "s51";
+  if (!SYSTEMS[currentSystemKey]) currentSystemKey = "s51";
   selSystem.value = currentSystemKey;
 
   function currentSystem() { return SYSTEMS[currentSystemKey]; }
 
   function updateSystemInfo() {
     const s = currentSystem();
-    document.getElementById("systemInfo").textContent =
-      `System: ${s.system} · ${s.posCount} Positionen` + (s.libero === true ? " · mit Libero" : s.libero === false ? " · ohne Libero" : "");
+    document.getElementById("systemInfo").textContent = `${s.posCount} Positionen`;
     const noteEl = document.getElementById("systemNote");
-    if (s.note) { noteEl.style.display = "block"; noteEl.textContent = s.note; }
-    else { noteEl.style.display = "none"; }
+    if (s.posCount === 6) {
+      noteEl.style.display = "block";
+      noteEl.textContent = "Hinweis Libero: Bei Teams mit Libero (z. B. D1, D2, D4, D5) ersetzt die Libero-Spielerin situativ eine rückwärtige Spielerin (meist Pos. 6, teils 1/5) im Passverhalten und in der Verteidigung — an Grund- und Basisposition selbst ändert das nichts Grundsätzliches.";
+    } else {
+      noteEl.style.display = "none";
+    }
   }
 
-  // ---------- Kompass ----------
+  // ---------- Kompass (Rad + verschiebbare Nadel) ----------
+  // 0° = oben (12 Uhr), im Uhrzeigersinn. 4 Sektoren zu je 90°.
   const KOMPASS_PHASES = [
     {
-      key: "eroeffnen",
-      title: "Ballwechsel eröffnen\n(Service / Annahme)",
-      text: "Der Ballwechsel beginnt: das eigene Team serviert, oder nimmt den gegnerischen Service an. Wer annimmt, legt damit den Grundstein für den eigenen Angriffsaufbau (1. Kontakt)."
-    },
-    {
-      key: "punktmachen",
-      title: "Punkt machen\n(Offensive)",
+      angle: 0, color: "#DC2626", title: "Punkt machen",
       text: "Nach erfolgreicher Annahme folgen Zuspiel (2. Kontakt) und Angriff (3. Kontakt). Ziel: den Ball kontrolliert und effektiv zum Punkt bringen."
     },
     {
-      key: "punktverhindern",
-      title: "Punkt verhindern\n(Defensive)",
-      text: "Sobald der Gegner im Ballbesitz ist, geht das eigene Team in die Basisposition — die Ausgangsstellung für Block und Verteidigung gegen den gegnerischen Angriff."
+      angle: 90, color: "#93C5FD", title: "Ballwechsel eröffnen (Service)",
+      text: "Das eigene Team serviert (1. Kontakt beim Gegner). Direkt danach wechselt die Servicespielerin von der Angriffs- in die Abwehrhaltung — sie geht in die Basisposition."
     },
     {
-      key: "verarbeiten",
-      title: "Ballwechsel verarbeiten",
-      text: "Nach Punktgewinn oder -verlust: ggf. neue Rotation, Wechsel zurück in Annahme- bzw. Feldposition — bereit für den nächsten Ballwechsel. Sonderfall: die Spielerin, die gerade serviert hat, wechselt direkt danach von der Angriffs- in die Abwehrhaltung (Basisposition)."
+      angle: 180, color: "#1D4ED8", title: "Punkt verhindern",
+      text: "Der Gegner ist im Ballbesitz: das eigene Team steht in der Basisposition — der Ausgangslage für Block und Verteidigung gegen den gegnerischen Angriff."
+    },
+    {
+      angle: 270, color: "#F87171", title: "Ballwechsel eröffnen (Annahme)",
+      text: "Das eigene Team nimmt den gegnerischen Service an (1. Kontakt). Wer annimmt, legt damit den Grundstein für den eigenen Angriffsaufbau."
     },
   ];
-  const kompassWrap = document.getElementById("kompassWrap");
+  const KOMPASS_CX = 160, KOMPASS_CY = 160, KOMPASS_R = 150, KOMPASS_HUB = 34;
+
+  function polarPt(cx, cy, r, deg) {
+    const rad = (deg * Math.PI) / 180;
+    return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) };
+  }
+  function wedgePath(cx, cy, r, centerDeg) {
+    const a0 = centerDeg - 45, a1 = centerDeg + 45;
+    const p0 = polarPt(cx, cy, r, a0), p1 = polarPt(cx, cy, r, a1);
+    return `M ${cx} ${cy} L ${p0.x} ${p0.y} A ${r} ${r} 0 0 1 ${p1.x} ${p1.y} Z`;
+  }
+
+  const kompassSvg = document.getElementById("kompassSvg");
   const kompassDetail = document.getElementById("kompassDetail");
-  KOMPASS_PHASES.forEach((phase) => {
-    const div = document.createElement("div");
-    div.className = "kompass-quad";
-    div.style.whiteSpace = "pre-line";
-    div.textContent = phase.title;
-    div.addEventListener("click", () => {
-      document.querySelectorAll(".kompass-quad").forEach((el) => el.classList.remove("active"));
-      div.classList.add("active");
-      kompassDetail.textContent = phase.text;
+  let kompassAngle = 270; // Start: Annahme
+  let kompassNeedleEl, kompassWedgeEls = {};
+
+  function setKompassPhase(angle, updateNeedle) {
+    kompassAngle = ((angle % 360) + 360) % 360;
+    const phase = KOMPASS_PHASES.find((p) => p.angle === kompassAngle) || KOMPASS_PHASES[0];
+    kompassDetail.textContent = phase.text;
+    Object.keys(kompassWedgeEls).forEach((k) => {
+      kompassWedgeEls[k].setAttribute("opacity", Number(k) === kompassAngle ? "1" : "0.55");
     });
-    kompassWrap.appendChild(div);
-  });
+    if (updateNeedle !== false && kompassNeedleEl) {
+      kompassNeedleEl.setAttribute("transform", `rotate(${kompassAngle} ${KOMPASS_CX} ${KOMPASS_CY})`);
+    }
+  }
+
+  function buildKompass() {
+    kompassSvg.innerHTML = "";
+    KOMPASS_PHASES.forEach((phase) => {
+      const path = document.createElementNS(NS, "path");
+      path.setAttribute("d", wedgePath(KOMPASS_CX, KOMPASS_CY, KOMPASS_R, phase.angle));
+      path.setAttribute("fill", phase.color);
+      path.setAttribute("class", "kompass-wedge");
+      path.setAttribute("stroke", "#fff");
+      path.setAttribute("stroke-width", "2");
+      path.addEventListener("click", () => setKompassPhase(phase.angle));
+      kompassSvg.appendChild(path);
+      kompassWedgeEls[phase.angle] = path;
+
+      const labelPt = polarPt(KOMPASS_CX, KOMPASS_CY, KOMPASS_R * 0.62, phase.angle);
+      const label = document.createElementNS(NS, "text");
+      label.setAttribute("x", labelPt.x); label.setAttribute("y", labelPt.y);
+      label.setAttribute("text-anchor", "middle"); label.setAttribute("class", "kompass-wedge-label");
+      const words = phase.title.split(" ");
+      words.forEach((w, i) => {
+        const tspan = document.createElementNS(NS, "tspan");
+        tspan.setAttribute("x", labelPt.x); tspan.setAttribute("dy", i === 0 ? "0" : "11");
+        tspan.textContent = w;
+        label.appendChild(tspan);
+      });
+      kompassSvg.appendChild(label);
+    });
+
+    // Hub (Mitte)
+    const hub = document.createElementNS(NS, "circle");
+    hub.setAttribute("cx", KOMPASS_CX); hub.setAttribute("cy", KOMPASS_CY); hub.setAttribute("r", KOMPASS_HUB);
+    hub.setAttribute("fill", "#F8FAFC"); hub.setAttribute("stroke", "#1D4ED8"); hub.setAttribute("stroke-width", "2");
+    kompassSvg.appendChild(hub);
+    const hubText = document.createElementNS(NS, "text");
+    hubText.setAttribute("x", KOMPASS_CX); hubText.setAttribute("y", KOMPASS_CY + 4);
+    hubText.setAttribute("text-anchor", "middle"); hubText.setAttribute("font-size", "11");
+    hubText.setAttribute("font-weight", "700"); hubText.setAttribute("fill", "#1D4ED8");
+    hubText.textContent = "Wir";
+    kompassSvg.appendChild(hubText);
+
+    // Nadel (draggable)
+    kompassNeedleEl = document.createElementNS(NS, "g");
+    kompassNeedleEl.setAttribute("class", "kompass-needle");
+    const needleLine = document.createElementNS(NS, "polygon");
+    needleLine.setAttribute("points", `${KOMPASS_CX - 7},${KOMPASS_CY} ${KOMPASS_CX + 7},${KOMPASS_CY} ${KOMPASS_CX},${KOMPASS_CY - KOMPASS_R + 14}`);
+    needleLine.setAttribute("fill", "#111827"); needleLine.setAttribute("opacity", "0.85");
+    kompassNeedleEl.appendChild(needleLine);
+    const needleTail = document.createElementNS(NS, "circle");
+    needleTail.setAttribute("cx", KOMPASS_CX); needleTail.setAttribute("cy", KOMPASS_CY); needleTail.setAttribute("r", "8");
+    needleTail.setAttribute("fill", "#F59E0B"); needleTail.setAttribute("stroke", "#111827");
+    kompassNeedleEl.appendChild(needleTail);
+    kompassSvg.appendChild(kompassNeedleEl);
+
+    function angleFromEvent(evt) {
+      const pt = kompassSvg.createSVGPoint();
+      pt.x = evt.clientX; pt.y = evt.clientY;
+      const svgPt = pt.matrixTransform(kompassSvg.getScreenCTM().inverse());
+      const dx = svgPt.x - KOMPASS_CX, dy = svgPt.y - KOMPASS_CY;
+      let deg = (Math.atan2(dx, -dy) * 180) / Math.PI;
+      if (deg < 0) deg += 360;
+      return deg;
+    }
+
+    let dragging = false;
+    kompassNeedleEl.addEventListener("pointerdown", (evt) => {
+      dragging = true; kompassNeedleEl.setPointerCapture(evt.pointerId); evt.preventDefault();
+    });
+    kompassNeedleEl.addEventListener("pointermove", (evt) => {
+      if (!dragging) return;
+      const deg = angleFromEvent(evt);
+      kompassNeedleEl.setAttribute("transform", `rotate(${deg} ${KOMPASS_CX} ${KOMPASS_CY})`);
+    });
+    kompassNeedleEl.addEventListener("pointerup", (evt) => {
+      dragging = false;
+      const deg = angleFromEvent(evt);
+      const snapped = Math.round(deg / 90) * 90;
+      setKompassPhase(snapped);
+    });
+
+    setKompassPhase(kompassAngle);
+  }
+  buildKompass();
 
   // ---------- Begriffe-Akkordeon ----------
   const BEGRIFFE = [
@@ -409,6 +514,52 @@
       drawPlayerStatic(basisLayer, { x: p.bx, y: p.by, label: ROLE_LABEL_6[p.role] || p.role, num: p.posNum, color: ROLE_COLOR_6[p.role] || "#FFFFFF" });
     });
     document.getElementById("gbNote").textContent = gbNote;
+    renderOverview();
+  }
+
+  function renderOverview() {
+    const s = currentSystem();
+    const grundWrap = document.getElementById("overviewGrund");
+    const basisWrap = document.getElementById("overviewBasis");
+    grundWrap.innerHTML = ""; basisWrap.innerHTML = "";
+    for (let n = 1; n <= s.posCount; n++) {
+      let players = [];
+      if (s.posCount === 6) {
+        const assignment = rotationAssignment6(n);
+        Object.keys(assignment).forEach((posNum) => {
+          const role = assignment[posNum];
+          players.push({ posNum, role, g: GRUND_GRID_6[posNum], b: BASIS_GRID_6[posNum] });
+        });
+      } else {
+        const assignment = rotationAssignment4(n);
+        Object.keys(assignment).forEach((posNum) => {
+          const role = assignment[posNum];
+          players.push({ posNum, role, g: GRID_4[posNum], b: GRID_4[posNum] });
+        });
+      }
+
+      const makeCell = (wrap, useBasis) => {
+        const cell = document.createElement("div");
+        cell.className = "overview-cell";
+        const lbl = document.createElement("div");
+        lbl.className = "ov-label"; lbl.textContent = `Zuspiel ${n}`;
+        cell.appendChild(lbl);
+        const frame = document.createElement("div");
+        frame.className = "court-frame";
+        const svgEl = document.createElementNS(NS, "svg");
+        svgEl.setAttribute("class", "court");
+        svgEl.setAttribute("viewBox", "0 0 400 372");
+        frame.appendChild(svgEl); cell.appendChild(frame); wrap.appendChild(cell);
+        drawCourtChrome(svgEl);
+        const layer = document.createElementNS(NS, "g"); svgEl.appendChild(layer);
+        players.forEach((p) => {
+          const [x, y] = useBasis ? p.b : p.g;
+          drawPlayerStatic(layer, { x, y, label: ROLE_LABEL_6[p.role] || p.role, num: p.posNum, color: ROLE_COLOR_6[p.role] || "#FFFFFF" });
+        });
+      };
+      makeCell(grundWrap, false);
+      makeCell(basisWrap, true);
+    }
   }
 
   // ---------- Annahme (editierbar) ----------
