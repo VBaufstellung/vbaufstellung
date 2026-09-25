@@ -639,7 +639,7 @@
 
       const isBack = [1, 5, 6].includes(n);
       basisImgWrap.style.display = "block";
-      basisImg.src = isBack ? "basis-hinten.png" : "basis-vorne.png";
+      basisImg.src = isBack ? "basis-hinten-v2.png" : "basis-vorne.png";
       basisImg.alt = isBack ? "Basisposition, Pass hinten" : "Basisposition, Pass vorne";
       basisNote.textContent = `Zuspielerin steht in dieser Rotation ${isBack ? "hinten (Position " + n + ")" : "vorne (Position " + n + ")"} — entsprechend die Basisposition "${isBack ? "Pass hinten" : "Pass vorne"}":`;
     } else {
@@ -753,7 +753,7 @@
       basisContent.innerHTML = `
         <div style="text-align:center;height:100%;">
           <div style="font-size:10px;font-weight:700;color:#1D4ED8;margin-bottom:4px;">${isBack ? "Pass hinten" : "Pass vorne"} (Zuspiel Pos. ${n})</div>
-          <img src="${isBack ? "basis-hinten.png" : "basis-vorne.png"}" style="max-width:100%;max-height:200px;object-fit:contain;">
+          <img src="${isBack ? "basis-hinten-v2.png" : "basis-vorne.png"}" style="max-width:100%;max-height:200px;object-fit:contain;">
         </div>`;
     } else {
       const basisContent = basisCard.querySelector(".fb-content");
