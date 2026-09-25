@@ -70,6 +70,15 @@
   .flip-back svg.court { width: 100%; height: auto; }
   .flip-back img { max-width: 100%; max-height: 200px; object-fit: contain; }
   .flip-back .fb-empty { font-size: 12px; color: #9CA3AF; text-align: center; padding: 0 10px; }
+
+  .annahme-practice-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .annahme-practice-row .court-box { flex: 1 1 260px; min-width: 240px; }
+  .player.correct circle.main { stroke: #16A34A; stroke-width: 4px; }
+  .player.wrong circle.main { stroke: #DC2626; stroke-width: 4px; }
+  .annahme-status { margin-top: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; display: none; }
+  .annahme-status.ok { display: block; background: #DCFCE7; color: #166534; border: 1px solid #86EFAC; }
+  .annahme-status.fail { display: block; background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; }
+  button.tab-done { background: #DCFCE7; border-color: #86EFAC; color: #166534; }
   .court-frame { background: #fff; border: 1px solid #E5E7EB; border-radius: 10px; padding: 8px; }
   svg.court { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
   .player-static circle.main, .player circle.main { stroke: #1D4ED8; stroke-width: 2; }
@@ -173,7 +182,17 @@
       </div>
       <div class="court-box">
         <h3>Basisposition</h3>
-        <div class="court-frame"><svg class="court" id="svgBasis" viewBox="0 0 400 372" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <p class="note" style="margin-top:0;">Basisposition ist unabhängig von der Rotation &mdash; sie hängt davon ab, ob die gegnerische Zuspielerin vorne oder hinten zuspielt:</p>
+        <div class="courts-row">
+          <div class="court-box">
+            <h3 style="font-size:12px;">Pass vorne</h3>
+            <div class="court-frame"><img src="basis-vorne.png" alt="Basisposition, Pass vorne" style="width:100%;height:auto;display:block;"></div>
+          </div>
+          <div class="court-box">
+            <h3 style="font-size:12px;">Pass hinten</h3>
+            <div class="court-frame"><img src="basis-hinten.png" alt="Basisposition, Pass hinten" style="width:100%;height:auto;display:block;"></div>
+          </div>
+        </div>
       </div>
     </div>
     <p class="note" id="gbNote"></p>
@@ -191,23 +210,34 @@
     <div class="flip-row" id="flipRow"></div>
   </div>
 
-  <!-- ANNAHME -->
+  <!-- ANNAHME UEBUNG -->
   <div class="card">
-    <h2>Annahme-Positionen</h2>
-    <p class="sub">Entwurf-Aufstellung pro Zuspiel-Rotation &mdash; frei verschiebbar. Passe die Positionen an, wie ihr sie im Training tatsächlich spielt; die Änderungen werden automatisch pro Team/Rotation gespeichert.</p>
+    <h2>Annahme-Positionen üben</h2>
+    <p class="sub">Rotation wählen, Spielerinnen möglichst nah an die Vorlage ziehen, dann prüfen. Bei "richtig" geht's automatisch zur nächsten Rotation weiter.</p>
     <div class="toolbar" id="annahmeTabs"></div>
-    <div class="court-frame">
-      <svg class="court" id="svgAnnahme" viewBox="0 0 400 372" xmlns="http://www.w3.org/2000/svg">
-        <defs></defs>
-        <g id="annahmeRulesLayer"></g>
-        <g id="annahmePlayersLayer"></g>
-      </svg>
+    <div class="annahme-practice-row">
+      <div class="court-box">
+        <h3 style="text-align:center;">Deine Aufstellung</h3>
+        <div class="court-frame">
+          <svg class="court" id="svgAnnahme" viewBox="0 0 400 372" xmlns="http://www.w3.org/2000/svg">
+            <defs></defs>
+            <g id="annahmeRulesLayer"></g>
+            <g id="annahmePlayersLayer"></g>
+          </svg>
+        </div>
+      </div>
+      <div class="court-box">
+        <h3 style="text-align:center;">Vorlage</h3>
+        <div class="court-frame"><img id="annahmeRefImg" src="" alt="Annahme-Vorlage" style="width:100%;height:auto;display:block;"></div>
+      </div>
     </div>
     <div class="toolbar" style="margin-top:8px;">
+      <button id="btnAnnahmeCheck" class="primary">Prüfen</button>
       <button id="btnAnnahmeReset" class="small">Entwurf zurücksetzen</button>
-      <button id="btnAnnahmeExport" class="primary small">Als PNG speichern</button>
+      <button id="btnAnnahmeExport" class="small">Als PNG speichern</button>
     </div>
-    <p class="note">Doppelklick auf eine Spielerin = Beschriftung ändern &middot; Ziehen = Position ändern.</p>
+    <div class="annahme-status" id="annahmeStatus"></div>
+    <p class="note">Doppelklick auf eine Spielerin = Beschriftung ändern &middot; Ziehen = Position ändern &middot; grüner Ring = richtig, roter Ring = noch anpassen.</p>
   </div>
 
   <!-- QUIZ -->
@@ -576,9 +606,8 @@
   function renderGrundBasis() {
     const s = currentSystem();
     const n = Number(selRotationGB.value) || 1;
-    drawCourtChrome(svgGrund); drawCourtChrome(svgBasis);
+    drawCourtChrome(svgGrund);
     const grundLayer = document.createElementNS(NS, "g"); svgGrund.appendChild(grundLayer);
-    const basisLayer = document.createElementNS(NS, "g"); svgBasis.appendChild(basisLayer);
 
     let players = [];
     let gbNote = "";
@@ -587,23 +616,21 @@
       Object.keys(assignment).forEach((posNum) => {
         const role = assignment[posNum];
         const [gx, gy] = GRUND_GRID_6[posNum];
-        const [bx, by] = BASIS_GRID_6[posNum];
-        players.push({ posNum, role, gx, gy, bx, by });
+        players.push({ posNum, role, gx, gy });
       });
-      gbNote = "6:6 / 5:1: Grundposition bildet ein Rechteck (Positionsnummern wie bei den Servicezonen). Basisposition bildet eine Pyramide — 3 breit am Netz, dahinter enger werdend.";
+      gbNote = "6:6 / 5:1: Grundposition bildet ein Rechteck (Positionsnummern wie bei den Servicezonen). Basisposition ist keine feste Formation pro Rotation, sondern hängt davon ab, ob die gegnerische Zuspielerin vorne oder hinten zuspielt (siehe Bilder rechts).";
     } else {
       const assignment = rotationAssignment4(n);
       Object.keys(assignment).forEach((posNum) => {
         const role = assignment[posNum];
         const [gx, gy] = GRID_4[posNum];
-        players.push({ posNum, role, gx, gy, bx: gx, by: gy });
+        players.push({ posNum, role, gx, gy });
       });
       gbNote = "4:4: Grundposition und Basisposition sind identisch — bei nur 4 Positionen braucht es keine separate Abwehrformation.";
     }
 
     players.forEach((p) => {
       drawPlayerStatic(grundLayer, { x: p.gx, y: p.gy, label: ROLE_LABEL_6[p.role] || p.role, num: p.posNum, color: ROLE_COLOR_6[p.role] || "#FFFFFF" });
-      drawPlayerStatic(basisLayer, { x: p.bx, y: p.by, label: ROLE_LABEL_6[p.role] || p.role, num: p.posNum, color: ROLE_COLOR_6[p.role] || "#FFFFFF" });
     });
     document.getElementById("gbNote").textContent = gbNote;
   }
@@ -614,6 +641,19 @@
     1: "annahme-1.png", 2: "annahme-2.png", 3: "annahme-3.png",
     4: "annahme-4.png", 5: "annahme-5.png", 6: "annahme-6.png",
   };
+
+  // Zielkoordinaten (viewBox 400x372) je Rotation & Positionsnummer, automatisch aus
+  // Jans eigenen Läufer-Bildern (annahme-1..6.png) extrahiert — dient als Basis für die
+  // "Prüfen"-Funktion unten. Toleranz beim Vergleich: siehe ANNAHME_TOLERANCE.
+  const ANNAHME_TARGETS = {
+    1: { 1:{x:354.7,y:270.8}, 2:{x:314.9,y:239.0}, 3:{x:94.9,y:128.7}, 4:{x:48.7,y:170.5}, 5:{x:104.4,y:265.6}, 6:{x:214.7,y:268.8} },
+    2: { 1:{x:311.3,y:253.9}, 2:{x:265.1,y:60.4}, 3:{x:98.6,y:235.7}, 4:{x:62.9,y:115.7}, 5:{x:173.8,y:337.4}, 6:{x:201.4,y:253.8} },
+    3: { 1:{x:319.8,y:267.9}, 2:{x:289.3,y:139.2}, 3:{x:252.2,y:59.9}, 4:{x:73.2,y:247.8}, 5:{x:213.9,y:270.7}, 6:{x:263.9,y:357.7} },
+    4: { 1:{x:350.6,y:315.9}, 2:{x:85.2,y:246.3}, 3:{x:55.1,y:159.1}, 4:{x:48.0,y:85.7}, 5:{x:202.5,y:258.2}, 6:{x:312.8,y:254.4} },
+    5: { 1:{x:304.5,y:235.9}, 2:{x:304.6,y:83.0}, 3:{x:102.1,y:228.6}, 4:{x:74.3,y:102.5}, 5:{x:151.6,y:131.3}, 6:{x:202.6,y:235.8} },
+    6: { 1:{x:312.1,y:253.3}, 2:{x:341.0,y:157.0}, 3:{x:283.8,y:57.3}, 4:{x:94.3,y:251.8}, 5:{x:205.9,y:259.4}, 6:{x:238.5,y:94.7} },
+  };
+  const ANNAHME_TOLERANCE = 45; // px in der 400x372-viewBox (~1.3m)
 
   const selOverviewRotation = document.getElementById("selOverviewRotation");
   const flipRow = document.getElementById("flipRow");
@@ -655,17 +695,17 @@
       const assignment = rotationAssignment6(n);
       Object.keys(assignment).forEach((posNum) => {
         const role = assignment[posNum];
-        players.push({ posNum, role, g: GRUND_GRID_6[posNum], b: BASIS_GRID_6[posNum] });
+        players.push({ posNum, role, g: GRUND_GRID_6[posNum] });
       });
     } else {
       const assignment = rotationAssignment4(n);
       Object.keys(assignment).forEach((posNum) => {
         const role = assignment[posNum];
-        players.push({ posNum, role, g: GRID_4[posNum], b: GRID_4[posNum] });
+        players.push({ posNum, role, g: GRID_4[posNum] });
       });
     }
 
-    function fillCourtCard(card, useBasis) {
+    function fillCourtCard(card) {
       const content = card.querySelector(".fb-content");
       const svgEl = document.createElementNS(NS, "svg");
       svgEl.setAttribute("class", "court");
@@ -674,12 +714,26 @@
       drawCourtChrome(svgEl);
       const layer = document.createElementNS(NS, "g"); svgEl.appendChild(layer);
       players.forEach((p) => {
-        const [x, y] = useBasis ? p.b : p.g;
+        const [x, y] = p.g;
         drawPlayerStatic(layer, { x, y, label: ROLE_LABEL_6[p.role] || p.role, num: p.posNum, color: ROLE_COLOR_6[p.role] || "#FFFFFF" });
       });
     }
-    fillCourtCard(grundCard, false);
-    fillCourtCard(basisCard, true);
+    fillCourtCard(grundCard);
+
+    if (s.posCount === 6) {
+      const basisContent = basisCard.querySelector(".fb-content");
+      basisContent.innerHTML = `
+        <div style="display:flex;gap:4px;height:100%;">
+          <div style="flex:1;text-align:center;"><div style="font-size:9px;font-weight:700;color:#1D4ED8;">Pass vorne</div><img src="basis-vorne.png" style="width:100%;"></div>
+          <div style="flex:1;text-align:center;"><div style="font-size:9px;font-weight:700;color:#1D4ED8;">Pass hinten</div><img src="basis-hinten.png" style="width:100%;"></div>
+        </div>`;
+    } else {
+      const basisContent = basisCard.querySelector(".fb-content");
+      const empty = document.createElement("div");
+      empty.className = "fb-empty";
+      empty.textContent = "Bei 4:4 identisch mit der Grundposition (siehe erste Karte).";
+      basisContent.appendChild(empty);
+    }
 
     const annahmeContent = annahmeCard.querySelector(".fb-content");
     if (s.posCount === 6 && ANNAHME_IMAGES[n]) {
@@ -703,6 +757,18 @@
   let annahmeState = { players: [] };
   let annahmeSelectedId = null;
   let annahmeIdCounter = 1;
+  let annahmeFeedback = {}; // posNum -> true/false, cleared on edit/rotation change
+  const annahmeRefImg = document.getElementById("annahmeRefImg");
+  const annahmeStatusEl = document.getElementById("annahmeStatus");
+
+  function annahmeSolvedKey() { return `lernzone-annahme-solved-${currentSystemKey}`; }
+  function getAnnahmeSolved() {
+    try { return JSON.parse(localStorage.getItem(annahmeSolvedKey()) || "[]"); } catch (e) { return []; }
+  }
+  function markAnnahmeSolved(n) {
+    const solved = getAnnahmeSolved();
+    if (!solved.includes(n)) { solved.push(n); localStorage.setItem(annahmeSolvedKey(), JSON.stringify(solved)); }
+  }
 
   function annahmeUid() { return "a" + (annahmeIdCounter++) + "_" + Date.now().toString(36); }
   function annahmeStorageKey() { return `lernzone-annahme-${currentSystemKey}-${annahmeRotation}`; }
@@ -759,7 +825,11 @@
     svgAnnahme.appendChild(annahmePlayersLayer);
     annahmeState.players.forEach((p) => {
       const g = document.createElementNS(NS, "g");
-      g.setAttribute("class", "player" + (p.id === annahmeSelectedId ? " selected" : ""));
+      let cls = "player";
+      if (p.id === annahmeSelectedId) cls += " selected";
+      if (annahmeFeedback[p.num] === true) cls += " correct";
+      else if (annahmeFeedback[p.num] === false) cls += " wrong";
+      g.setAttribute("class", cls);
       g.setAttribute("transform", `translate(${p.x},${p.y})`);
       const c = document.createElementNS(NS, "circle");
       c.setAttribute("class", "main"); c.setAttribute("r", "19"); c.setAttribute("fill", p.color);
@@ -782,6 +852,7 @@
       let dragging = false;
       g.addEventListener("pointerdown", (evt) => {
         annahmeSelectedId = p.id; dragging = true;
+        annahmeFeedback = {}; annahmeStatusEl.className = "annahme-status";
         g.setPointerCapture(evt.pointerId); evt.preventDefault();
       });
       g.addEventListener("pointermove", (evt) => {
@@ -813,6 +884,7 @@
 
   function setupAnnahmeTabs() {
     const s = currentSystem();
+    const solved = getAnnahmeSolved();
     annahmeTabsEl.innerHTML = "";
     const label = document.createElement("span");
     label.style.cssText = "font-size:13px;font-weight:600;color:#1D4ED8;";
@@ -820,8 +892,8 @@
     annahmeTabsEl.appendChild(label);
     for (let n = 1; n <= s.posCount; n++) {
       const btn = document.createElement("button");
-      btn.className = "small" + (n === annahmeRotation ? " active" : "");
-      btn.textContent = n;
+      btn.className = "small" + (n === annahmeRotation ? " active" : "") + (solved.includes(n) ? " tab-done" : "");
+      btn.textContent = solved.includes(n) ? `${n} ✓` : String(n);
       btn.addEventListener("click", () => { annahmeRotation = n; loadOrDefaultAnnahme(); setupAnnahmeTabs(); });
       annahmeTabsEl.appendChild(btn);
     }
@@ -829,13 +901,63 @@
 
   function loadOrDefaultAnnahme() {
     annahmeSelectedId = null;
+    annahmeFeedback = {};
+    annahmeStatusEl.className = "annahme-status";
     if (!loadAnnahme()) { annahmeState = { players: defaultAnnahmeFormation() }; saveAnnahme(); }
+    if (ANNAHME_IMAGES[annahmeRotation]) {
+      annahmeRefImg.src = ANNAHME_IMAGES[annahmeRotation];
+      annahmeRefImg.style.display = "block";
+    } else {
+      annahmeRefImg.style.display = "none";
+    }
     renderAnnahme();
   }
+
+  function checkAnnahme() {
+    const targets = ANNAHME_TARGETS[annahmeRotation];
+    if (!targets) {
+      annahmeStatusEl.className = "annahme-status fail";
+      annahmeStatusEl.textContent = "Für diese Rotation liegen noch keine Prüfdaten vor.";
+      return;
+    }
+    let allOk = true;
+    annahmeFeedback = {};
+    annahmeState.players.forEach((p) => {
+      const t = targets[p.num];
+      if (!t) return;
+      const dist = Math.hypot(p.x - t.x, p.y - t.y);
+      const ok = dist <= ANNAHME_TOLERANCE;
+      annahmeFeedback[p.num] = ok;
+      if (!ok) allOk = false;
+    });
+    renderAnnahme();
+    if (allOk) {
+      markAnnahmeSolved(annahmeRotation);
+      setupAnnahmeTabs();
+      const s = currentSystem();
+      const isLast = annahmeRotation >= s.posCount;
+      annahmeStatusEl.className = "annahme-status ok";
+      annahmeStatusEl.textContent = isLast
+        ? "Richtig! Alle Rotationen dieser Annahme-Übung geschafft. 🎉"
+        : "Richtig! Weiter zur nächsten Rotation …";
+      if (!isLast) {
+        setTimeout(() => {
+          annahmeRotation += 1;
+          loadOrDefaultAnnahme();
+          setupAnnahmeTabs();
+        }, 1400);
+      }
+    } else {
+      annahmeStatusEl.className = "annahme-status fail";
+      annahmeStatusEl.textContent = "Noch nicht ganz — die rot umrandeten Spielerinnen nochmal an die Vorlage anpassen und erneut prüfen.";
+    }
+  }
+  document.getElementById("btnAnnahmeCheck").addEventListener("click", checkAnnahme);
 
   document.getElementById("btnAnnahmeReset").addEventListener("click", () => {
     if (!confirm("Entwurf für diese Rotation auf die Standard-Ausgangslage zurücksetzen?")) return;
     annahmeState = { players: defaultAnnahmeFormation() };
+    annahmeFeedback = {}; annahmeStatusEl.className = "annahme-status";
     saveAnnahme(); renderAnnahme();
   });
 
