@@ -133,7 +133,7 @@
 
   <p class="hint">
     <b>Rotation-Dropdown</b>: Zuspiel 1&ndash;6 w&auml;hlen &mdash; die passende Grundformation (Z/AA/MB/DIA auf den sechs Positionen) wird automatisch aufgestellt &middot;
-    <b>Ziehen</b> = Position &auml;ndern &middot; <b>Doppelklick</b> auf einen Kreis = Beschriftung &auml;ndern &middot;
+    <b>Ziehen</b> = Position &auml;ndern &middot; <b>Klick auf den kleinen "A"-Punkt</b> unten links am Kreis = Beschriftung &auml;ndern (auch Doppelklick auf den Kreis funktioniert) &middot;
     <b>Klick auf den kleinen Farbpunkt</b> oben links am Kreis = Farbe wechseln &middot;
     <b>Positionsregel-Linien</b> (fein, schwarz): verbinden automatisch die sechs nummerierten Grundpositionen 1&ndash;6 &mdash; bei einer Stellungsfehler-Verletzung (z.&nbsp;B. Pos.&nbsp;2 nicht n&auml;her am Netz als Pos.&nbsp;1) wird die Linie gestrichelt. Folgt automatisch, wenn du Spielerinnen verschiebst &middot;
     <b>Laufweg zeichnen</b>: an, dann mit gedr&uuml;ckter Maustaste/Finger frei eine Linie ziehen &mdash; zeigt Laufwege/Aktionen nach der Annahme, wird automatisch zu einer glatten Linie mit Pfeilspitze begradigt.
@@ -393,6 +393,23 @@
       swatch.dataset.swatch = "1";
       g.appendChild(swatch);
 
+      // rename handle (bottom-left) — Klick oeffnet direkt das
+      // Beschriftungs-Prompt, ohne auf Doppelklick angewiesen zu sein.
+      const renameHandle = document.createElementNS(NS, "circle");
+      renameHandle.setAttribute("cx", "-15"); renameHandle.setAttribute("cy", "15"); renameHandle.setAttribute("r", "5.5");
+      renameHandle.setAttribute("fill", "#F8FAFC");
+      renameHandle.setAttribute("stroke", "#1D4ED8"); renameHandle.setAttribute("stroke-width", "1.2");
+      renameHandle.dataset.rename = "1";
+      g.appendChild(renameHandle);
+      const renameIcon = document.createElementNS(NS, "text");
+      renameIcon.setAttribute("x", "-15"); renameIcon.setAttribute("y", "17.3");
+      renameIcon.setAttribute("text-anchor", "middle");
+      renameIcon.setAttribute("font-size", "8.5"); renameIcon.setAttribute("font-weight", "700");
+      renameIcon.setAttribute("fill", "#1D4ED8");
+      renameIcon.setAttribute("pointer-events", "none");
+      renameIcon.textContent = "A";
+      g.appendChild(renameIcon);
+
       if (state.showNumbers && p.num) {
         const nb = document.createElementNS(NS, "circle");
         nb.setAttribute("cx", "14"); nb.setAttribute("cy", "14"); nb.setAttribute("r", "8.5");
@@ -427,6 +444,11 @@
         const idx = COLORS.indexOf(p.color);
         p.color = COLORS[(idx + 1) % COLORS.length];
         render();
+        return;
+      }
+      const isRename = evt.target.dataset && evt.target.dataset.rename;
+      if (isRename) {
+        renameLabel();
         return;
       }
 

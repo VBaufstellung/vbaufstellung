@@ -231,7 +231,7 @@
       <button id="btnAnnahmeExport" class="small">Als PNG speichern</button>
     </div>
     <div class="annahme-status" id="annahmeStatus"></div>
-    <p class="note">Doppelklick auf eine Spielerin = Beschriftung ändern &middot; Ziehen = Position ändern &middot; grüner Ring = richtig, roter Ring = noch anpassen.</p>
+    <p class="note">Klick auf den kleinen "A"-Punkt unten links am Kreis = Beschriftung ändern (auch Doppelklick auf die Spielerin funktioniert) &middot; Ziehen = Position ändern &middot; grüner Ring = richtig, roter Ring = noch anpassen.</p>
   </div>
 
   <!-- QUIZ -->
@@ -903,13 +903,35 @@
         nt.setAttribute("font-size", "9"); nt.setAttribute("font-weight", "700"); nt.setAttribute("fill", "#fff");
         nt.textContent = p.num; g.appendChild(nt);
       }
-      let dragging = false;
-      let lastDownTime = 0, lastDownAt = null;
+
       function renameAnnahmeLabel() {
         const next = prompt("Beschriftung:", p.label);
         if (next !== null && next.trim() !== "") { p.label = next.trim().slice(0, 8); renderAnnahme(); saveAnnahme(); }
       }
+
+      // rename handle (unten links) — Klick oeffnet direkt das
+      // Beschriftungs-Prompt, ohne auf Doppelklick angewiesen zu sein.
+      const renameHandle = document.createElementNS(NS, "circle");
+      renameHandle.setAttribute("cx", "-15"); renameHandle.setAttribute("cy", "15"); renameHandle.setAttribute("r", "5.5");
+      renameHandle.setAttribute("fill", "#F8FAFC");
+      renameHandle.setAttribute("stroke", "#1D4ED8"); renameHandle.setAttribute("stroke-width", "1.2");
+      renameHandle.dataset.rename = "1";
+      g.appendChild(renameHandle);
+      const renameIcon = document.createElementNS(NS, "text");
+      renameIcon.setAttribute("x", "-15"); renameIcon.setAttribute("y", "17.3");
+      renameIcon.setAttribute("text-anchor", "middle");
+      renameIcon.setAttribute("font-size", "8.5"); renameIcon.setAttribute("font-weight", "700");
+      renameIcon.setAttribute("fill", "#1D4ED8");
+      renameIcon.setAttribute("pointer-events", "none");
+      renameIcon.textContent = "A";
+      g.appendChild(renameIcon);
+
+      let dragging = false;
+      let lastDownTime = 0, lastDownAt = null;
       g.addEventListener("pointerdown", (evt) => {
+        const isRename = evt.target.dataset && evt.target.dataset.rename;
+        if (isRename) { renameAnnahmeLabel(); return; }
+
         // Doppelklick-/Doppeltipp-Erkennung ueber Zeit + Abstand zwischen zwei
         // pointerdown-Events, weil setPointerCapture()/preventDefault() beim
         // Ziehen in manchen Browsern das native "dblclick"-Event unterdrueckt.
