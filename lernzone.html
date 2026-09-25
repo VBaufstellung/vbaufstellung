@@ -182,17 +182,8 @@
       </div>
       <div class="court-box">
         <h3>Basisposition</h3>
-        <p class="note" style="margin-top:0;">Basisposition ist unabhängig von der Rotation &mdash; sie hängt davon ab, ob die gegnerische Zuspielerin vorne oder hinten zuspielt:</p>
-        <div class="courts-row">
-          <div class="court-box">
-            <h3 style="font-size:12px;">Pass vorne</h3>
-            <div class="court-frame"><img src="basis-vorne.png" alt="Basisposition, Pass vorne" style="width:100%;height:auto;display:block;"></div>
-          </div>
-          <div class="court-box">
-            <h3 style="font-size:12px;">Pass hinten</h3>
-            <div class="court-frame"><img src="basis-hinten.png" alt="Basisposition, Pass hinten" style="width:100%;height:auto;display:block;"></div>
-          </div>
-        </div>
+        <p class="note" style="margin-top:0;" id="basisNote"></p>
+        <div class="court-frame" id="basisImgWrap"><img id="basisImg" src="" alt="Basisposition" style="width:100%;height:auto;display:block;"></div>
       </div>
     </div>
     <p class="note" id="gbNote"></p>
@@ -283,6 +274,14 @@
     net.setAttribute("stroke-linecap", "round");
     chromeG.appendChild(net);
 
+    const netLabel = document.createElementNS(NS, "text");
+    netLabel.setAttribute("x", "200"); netLabel.setAttribute("y", COURT_TOP - 10);
+    netLabel.setAttribute("text-anchor", "middle");
+    netLabel.setAttribute("font-size", "13"); netLabel.setAttribute("font-weight", "700");
+    netLabel.setAttribute("fill", "#1D4ED8");
+    netLabel.textContent = "NETZ / MITTELLINIE";
+    chromeG.appendChild(netLabel);
+
     if (opts && opts.showAttackLine !== false) {
       const attackLine = document.createElementNS(NS, "line");
       attackLine.setAttribute("x1", COURT_LEFT); attackLine.setAttribute("y1", ATTACK_Y);
@@ -290,7 +289,21 @@
       attackLine.setAttribute("stroke", "#FFFFFF"); attackLine.setAttribute("stroke-width", "1.8");
       attackLine.setAttribute("stroke-dasharray", "6 5"); attackLine.setAttribute("opacity", "0.9");
       chromeG.appendChild(attackLine);
+
+      const attackLabel = document.createElementNS(NS, "text");
+      attackLabel.setAttribute("x", COURT_RIGHT + 4); attackLabel.setAttribute("y", ATTACK_Y + 4);
+      attackLabel.setAttribute("font-size", "9"); attackLabel.setAttribute("font-weight", "700");
+      attackLabel.setAttribute("fill", "#9CA3AF");
+      attackLabel.textContent = "3m";
+      chromeG.appendChild(attackLabel);
     }
+
+    const dims = document.createElementNS(NS, "text");
+    dims.setAttribute("x", "200"); dims.setAttribute("y", COURT_BOTTOM + 16);
+    dims.setAttribute("text-anchor", "middle");
+    dims.setAttribute("font-size", "9.5"); dims.setAttribute("fill", "#9CA3AF");
+    dims.textContent = "Feld 9m x 9m (Vereinsfeld-Haelfte) · 3m-Linie eingezeichnet";
+    chromeG.appendChild(dims);
   }
 
   function drawPlayerStatic(layer, p) {
@@ -381,7 +394,7 @@
     const noteEl = document.getElementById("systemNote");
     if (s.posCount === 6) {
       noteEl.style.display = "block";
-      noteEl.textContent = "Hinweis Libero: Bei Teams mit Libero (z. B. D1, D2, D4, D5) ersetzt die Libero-Spielerin situativ eine rückwärtige Spielerin (meist Pos. 6, teils 1/5) im Passverhalten und in der Verteidigung — an Grund- und Basisposition selbst ändert das nichts Grundsätzliches.";
+      noteEl.textContent = "Hinweis Libero: Bei Teams mit Libero (z. B. D1, D2, D4, D5) ersetzt die Libero-Spielerin situativ eine rückwärtige Spielerin (meist Pos. 5) im Passverhalten und in der Verteidigung — an Grund- und Basisposition selbst ändert das nichts Grundsätzliches.";
     } else {
       noteEl.style.display = "none";
     }
@@ -611,6 +624,10 @@
 
     let players = [];
     let gbNote = "";
+    const basisImg = document.getElementById("basisImg");
+    const basisImgWrap = document.getElementById("basisImgWrap");
+    const basisNote = document.getElementById("basisNote");
+
     if (s.posCount === 6) {
       const assignment = rotationAssignment6(n);
       Object.keys(assignment).forEach((posNum) => {
@@ -618,7 +635,13 @@
         const [gx, gy] = GRUND_GRID_6[posNum];
         players.push({ posNum, role, gx, gy });
       });
-      gbNote = "6:6 / 5:1: Grundposition bildet ein Rechteck (Positionsnummern wie bei den Servicezonen). Basisposition ist keine feste Formation pro Rotation, sondern hängt davon ab, ob die gegnerische Zuspielerin vorne oder hinten zuspielt (siehe Bilder rechts).";
+      gbNote = "6:6 / 5:1: Grundposition bildet ein Rechteck (Positionsnummern wie bei den Servicezonen). Basisposition hängt davon ab, ob unsere eigene Zuspielerin in dieser Rotation vorne oder hinten steht — das Bild rechts wechselt automatisch je nach gewählter Rotation.";
+
+      const isBack = [1, 5, 6].includes(n);
+      basisImgWrap.style.display = "block";
+      basisImg.src = isBack ? "basis-hinten.png" : "basis-vorne.png";
+      basisImg.alt = isBack ? "Basisposition, Pass hinten" : "Basisposition, Pass vorne";
+      basisNote.textContent = `Zuspielerin steht in dieser Rotation ${isBack ? "hinten (Position " + n + ")" : "vorne (Position " + n + ")"} — entsprechend die Basisposition "${isBack ? "Pass hinten" : "Pass vorne"}":`;
     } else {
       const assignment = rotationAssignment4(n);
       Object.keys(assignment).forEach((posNum) => {
@@ -627,6 +650,10 @@
         players.push({ posNum, role, gx, gy });
       });
       gbNote = "4:4: Grundposition und Basisposition sind identisch — bei nur 4 Positionen braucht es keine separate Abwehrformation.";
+
+      basisImgWrap.style.display = "none";
+      basisImg.src = ""; basisImg.alt = "";
+      basisNote.textContent = "4:4: Basisposition ist identisch mit der Grundposition (siehe links).";
     }
 
     players.forEach((p) => {
@@ -721,11 +748,12 @@
     fillCourtCard(grundCard);
 
     if (s.posCount === 6) {
+      const isBack = [1, 5, 6].includes(n);
       const basisContent = basisCard.querySelector(".fb-content");
       basisContent.innerHTML = `
-        <div style="display:flex;gap:4px;height:100%;">
-          <div style="flex:1;text-align:center;"><div style="font-size:9px;font-weight:700;color:#1D4ED8;">Pass vorne</div><img src="basis-vorne.png" style="width:100%;"></div>
-          <div style="flex:1;text-align:center;"><div style="font-size:9px;font-weight:700;color:#1D4ED8;">Pass hinten</div><img src="basis-hinten.png" style="width:100%;"></div>
+        <div style="text-align:center;height:100%;">
+          <div style="font-size:10px;font-weight:700;color:#1D4ED8;margin-bottom:4px;">${isBack ? "Pass hinten" : "Pass vorne"} (Zuspiel Pos. ${n})</div>
+          <img src="${isBack ? "basis-hinten.png" : "basis-vorne.png"}" style="max-width:100%;max-height:200px;object-fit:contain;">
         </div>`;
     } else {
       const basisContent = basisCard.querySelector(".fb-content");
@@ -771,39 +799,25 @@
   }
 
   function annahmeUid() { return "a" + (annahmeIdCounter++) + "_" + Date.now().toString(36); }
-  function annahmeStorageKey() { return `lernzone-annahme-${currentSystemKey}-${annahmeRotation}`; }
+  function annahmeStorageKey() { return `lernzone-annahme-v2-${currentSystemKey}-${annahmeRotation}`; }
 
   function defaultAnnahmeFormation() {
-    // Generischer Entwurf (W-Form der Annehmenden, Angreifer/Zuspiel am Netz).
-    // Keine offiziell belegte, rotationsspezifische Aufstellung — dient als
-    // Ausgangspunkt zum gemeinsamen Anpassen.
+    // Startpunkt = echte Grundposition der aktuellen Rotation (identisch zur
+    // "Grundposition vs. Basisposition"-Karte oben) — von hier aus in die
+    // korrekte Annahme-Formation ziehen.
     const s = currentSystem();
     if (s.posCount === 6) {
       const assignment = rotationAssignment6(annahmeRotation);
-      const spotsByRole = {
-        Z: [COURT_RIGHT - 40, COURT_TOP + 45],
-        M1: [colL, COURT_TOP + 45],
-        M2: [colR - 10, COURT_TOP + 45],
-        A1: [COURT_LEFT + COURT_SIZE * 0.2, ATTACK_Y + 55],
-        D: [colM, ATTACK_Y + 70],
-        A2: [COURT_LEFT + COURT_SIZE * 0.8, ATTACK_Y + 55],
-      };
       return Object.keys(assignment).map((posNum) => {
         const role = assignment[posNum];
-        const [x, y] = spotsByRole[role] || [colM, rowBack];
+        const [x, y] = GRUND_GRID_6[posNum];
         return { id: annahmeUid(), label: ROLE_LABEL_6[role] || role, x, y, color: ROLE_COLOR_6[role] || "#FFFFFF", num: posNum };
       });
     } else {
       const assignment = rotationAssignment4(annahmeRotation);
-      const spotsByRole = {
-        Z: [COURT_RIGHT - 40, COURT_TOP + 45],
-        D: [colM, COURT_TOP + 45],
-        A1: [COURT_LEFT + COURT_SIZE * 0.25, ATTACK_Y + 60],
-        A2: [COURT_LEFT + COURT_SIZE * 0.75, ATTACK_Y + 60],
-      };
       return Object.keys(assignment).map((posNum) => {
         const role = assignment[posNum];
-        const [x, y] = spotsByRole[role] || [colM, rowBack];
+        const [x, y] = GRID_4[posNum];
         return { id: annahmeUid(), label: role, x, y, color: "#FFFFFF", num: posNum };
       });
     }
