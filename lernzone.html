@@ -45,11 +45,31 @@
   .courts-row { display: flex; gap: 14px; flex-wrap: wrap; }
   .court-box { flex: 1 1 260px; min-width: 240px; }
   .court-box h3 { text-align: center; }
-  .overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .overview-cell { text-align: center; }
-  .overview-cell .court-frame { padding: 4px; }
-  .overview-cell .ov-label { font-size: 11px; font-weight: 700; color: #1D4ED8; margin-bottom: 2px; }
-  @media (max-width: 560px) { .overview-grid { grid-template-columns: repeat(2, 1fr); } }
+  .flip-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 620px) { .flip-row { grid-template-columns: 1fr; } }
+  .flip-card { perspective: 1200px; height: 260px; cursor: pointer; }
+  .flip-inner {
+    position: relative; width: 100%; height: 100%;
+    transition: transform 0.5s; transform-style: preserve-3d;
+  }
+  .flip-card.flipped .flip-inner { transform: rotateY(180deg); }
+  .flip-front, .flip-back {
+    position: absolute; inset: 0; backface-visibility: hidden;
+    border-radius: 10px; border: 1px solid #E5E7EB; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+  }
+  .flip-front {
+    background: linear-gradient(135deg, #2563EB, #1D4ED8); color: #fff;
+    font-size: 16px; font-weight: 700; gap: 8px;
+  }
+  .flip-front span.hint { font-size: 11px; font-weight: 500; opacity: 0.85; }
+  .flip-back {
+    background: #fff; transform: rotateY(180deg); padding: 6px; flex-direction: column;
+  }
+  .flip-back .fb-label { font-size: 11px; font-weight: 700; color: #1D4ED8; margin-bottom: 2px; }
+  .flip-back svg.court { width: 100%; height: auto; }
+  .flip-back img { max-width: 100%; max-height: 200px; object-fit: contain; }
+  .flip-back .fb-empty { font-size: 12px; color: #9CA3AF; text-align: center; padding: 0 10px; }
   .court-frame { background: #fff; border: 1px solid #E5E7EB; border-radius: 10px; padding: 8px; }
   svg.court { width: 100%; height: auto; display: block; touch-action: none; user-select: none; }
   .player-static circle.main, .player circle.main { stroke: #1D4ED8; stroke-width: 2; }
@@ -162,11 +182,13 @@
   <!-- ALLE ROTATIONEN UEBERSICHT -->
   <div class="card">
     <h2>Alle Rotationen im Überblick</h2>
-    <p class="sub">Grundposition (Rechteck) und Basisposition (Pyramide, Quelle: volleyballswissmade.ch) für jede Rotation auf einen Blick.</p>
-    <h3 style="text-align:center;">Grundposition</h3>
-    <div class="overview-grid" id="overviewGrund"></div>
-    <h3 style="text-align:center;margin-top:18px;">Basisposition</h3>
-    <div class="overview-grid" id="overviewBasis"></div>
+    <p class="sub">Rotation wählen, dann Karte umdrehen &mdash; Grundposition, Basisposition und Annahme im Vergleich.</p>
+    <div class="toolbar">
+      <label>Rotation:
+        <select id="selOverviewRotation"></select>
+      </label>
+    </div>
+    <div class="flip-row" id="flipRow"></div>
   </div>
 
   <!-- ANNAHME -->
@@ -584,51 +606,92 @@
       drawPlayerStatic(basisLayer, { x: p.bx, y: p.by, label: ROLE_LABEL_6[p.role] || p.role, num: p.posNum, color: ROLE_COLOR_6[p.role] || "#FFFFFF" });
     });
     document.getElementById("gbNote").textContent = gbNote;
-    renderOverview();
+  }
+
+  // ---------- Alle Rotationen im Überblick (Dropdown + Umdreh-Karten) ----------
+  // Annahme-Referenzbilder von Jan (eigene Läufer-Aufnahmen aus dem Spielfeld-Tool, 5:1-System).
+  const ANNAHME_IMAGES = {
+    1: "annahme-1.png", 2: "annahme-2.png", 3: "annahme-3.png",
+    4: "annahme-4.png", 5: "annahme-5.png", 6: "annahme-6.png",
+  };
+
+  const selOverviewRotation = document.getElementById("selOverviewRotation");
+  const flipRow = document.getElementById("flipRow");
+
+  function populateOverviewRotationSelect() {
+    const s = currentSystem();
+    selOverviewRotation.innerHTML = "";
+    for (let n = 1; n <= s.posCount; n++) {
+      const opt = document.createElement("option");
+      opt.value = n; opt.textContent = `L${n} — Zuspiel ${n}`;
+      selOverviewRotation.appendChild(opt);
+    }
+  }
+
+  function buildFlipCard(type, label) {
+    const card = document.createElement("div");
+    card.className = "flip-card"; card.dataset.type = type;
+    card.innerHTML = `
+      <div class="flip-inner">
+        <div class="flip-front"><span>${label}</span><span class="hint">Klicken zum Umdrehen</span></div>
+        <div class="flip-back"><div class="fb-label">${label}</div><div class="fb-content"></div></div>
+      </div>`;
+    card.addEventListener("click", () => card.classList.toggle("flipped"));
+    return card;
   }
 
   function renderOverview() {
     const s = currentSystem();
-    const grundWrap = document.getElementById("overviewGrund");
-    const basisWrap = document.getElementById("overviewBasis");
-    grundWrap.innerHTML = ""; basisWrap.innerHTML = "";
-    for (let n = 1; n <= s.posCount; n++) {
-      let players = [];
-      if (s.posCount === 6) {
-        const assignment = rotationAssignment6(n);
-        Object.keys(assignment).forEach((posNum) => {
-          const role = assignment[posNum];
-          players.push({ posNum, role, g: GRUND_GRID_6[posNum], b: BASIS_GRID_6[posNum] });
-        });
-      } else {
-        const assignment = rotationAssignment4(n);
-        Object.keys(assignment).forEach((posNum) => {
-          const role = assignment[posNum];
-          players.push({ posNum, role, g: GRID_4[posNum], b: GRID_4[posNum] });
-        });
-      }
+    const n = Number(selOverviewRotation.value) || 1;
+    flipRow.innerHTML = "";
 
-      const makeCell = (wrap, useBasis) => {
-        const cell = document.createElement("div");
-        cell.className = "overview-cell";
-        const lbl = document.createElement("div");
-        lbl.className = "ov-label"; lbl.textContent = `Zuspiel ${n}`;
-        cell.appendChild(lbl);
-        const frame = document.createElement("div");
-        frame.className = "court-frame";
-        const svgEl = document.createElementNS(NS, "svg");
-        svgEl.setAttribute("class", "court");
-        svgEl.setAttribute("viewBox", "0 0 400 372");
-        frame.appendChild(svgEl); cell.appendChild(frame); wrap.appendChild(cell);
-        drawCourtChrome(svgEl);
-        const layer = document.createElementNS(NS, "g"); svgEl.appendChild(layer);
-        players.forEach((p) => {
-          const [x, y] = useBasis ? p.b : p.g;
-          drawPlayerStatic(layer, { x, y, label: ROLE_LABEL_6[p.role] || p.role, num: p.posNum, color: ROLE_COLOR_6[p.role] || "#FFFFFF" });
-        });
-      };
-      makeCell(grundWrap, false);
-      makeCell(basisWrap, true);
+    const grundCard = buildFlipCard("grund", "Grundposition");
+    const basisCard = buildFlipCard("basis", "Basisposition");
+    const annahmeCard = buildFlipCard("annahme", "Annahme");
+    flipRow.appendChild(grundCard); flipRow.appendChild(basisCard); flipRow.appendChild(annahmeCard);
+
+    let players = [];
+    if (s.posCount === 6) {
+      const assignment = rotationAssignment6(n);
+      Object.keys(assignment).forEach((posNum) => {
+        const role = assignment[posNum];
+        players.push({ posNum, role, g: GRUND_GRID_6[posNum], b: BASIS_GRID_6[posNum] });
+      });
+    } else {
+      const assignment = rotationAssignment4(n);
+      Object.keys(assignment).forEach((posNum) => {
+        const role = assignment[posNum];
+        players.push({ posNum, role, g: GRID_4[posNum], b: GRID_4[posNum] });
+      });
+    }
+
+    function fillCourtCard(card, useBasis) {
+      const content = card.querySelector(".fb-content");
+      const svgEl = document.createElementNS(NS, "svg");
+      svgEl.setAttribute("class", "court");
+      svgEl.setAttribute("viewBox", "0 0 400 372");
+      content.appendChild(svgEl);
+      drawCourtChrome(svgEl);
+      const layer = document.createElementNS(NS, "g"); svgEl.appendChild(layer);
+      players.forEach((p) => {
+        const [x, y] = useBasis ? p.b : p.g;
+        drawPlayerStatic(layer, { x, y, label: ROLE_LABEL_6[p.role] || p.role, num: p.posNum, color: ROLE_COLOR_6[p.role] || "#FFFFFF" });
+      });
+    }
+    fillCourtCard(grundCard, false);
+    fillCourtCard(basisCard, true);
+
+    const annahmeContent = annahmeCard.querySelector(".fb-content");
+    if (s.posCount === 6 && ANNAHME_IMAGES[n]) {
+      const img = document.createElement("img");
+      img.src = ANNAHME_IMAGES[n];
+      img.alt = `Annahme-Position Rotation ${n}`;
+      annahmeContent.appendChild(img);
+    } else {
+      const empty = document.createElement("div");
+      empty.className = "fb-empty";
+      empty.textContent = "Für dieses System noch kein Referenzbild hinterlegt.";
+      annahmeContent.appendChild(empty);
     }
   }
 
@@ -865,15 +928,20 @@
     updateSystemInfo();
     populateRotationSelect();
     renderGrundBasis();
+    populateOverviewRotationSelect();
+    renderOverview();
     annahmeRotation = 1;
     setupAnnahmeTabs();
     loadOrDefaultAnnahme();
   });
   selRotationGB.addEventListener("change", renderGrundBasis);
+  selOverviewRotation.addEventListener("change", renderOverview);
 
   updateSystemInfo();
   populateRotationSelect();
   renderGrundBasis();
+  populateOverviewRotationSelect();
+  renderOverview();
   setupAnnahmeTabs();
   loadOrDefaultAnnahme();
   startQuiz();
