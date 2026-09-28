@@ -653,7 +653,7 @@
     { t: "Startposition", d: "Der genaue Punkt, von dem aus eine Spielerin eine konkrete Aktion (z. B. Block, Verteidigung) startet — kann leicht von der Basisposition abweichen, je nachdem wohin der Gegner zuspielt." },
     { t: "Annahme", d: "Der erste Ballkontakt gegen den gegnerischen Service." },
     { t: "Abwehr / Verteidigung", d: "Die Aktion gegen einen gegnerischen Angriff (nicht gegen den Service!)." },
-    { t: "Häufige Verwechslung: Annahme vs. Basisposition", d: "Annahme ist eine Aktion (Reaktion auf den Service). Basisposition ist eine Stellung — die Ausgangslage, bevor überhaupt klar ist, ob als Nächstes Service oder Angriff kommt. Viele Spielerinnen verwechseln das am Anfang." },
+    { t: "Häufige Verwechslung: Annahme vs. Basisposition", d: "Annahme ist eine Aktion (Reaktion auf den Service). Basisposition ist eine Stellung — die Ausgangslage, die man einnimmt, solange der Gegner im Ballbesitz ist bzw. im Aufbau seines Angriffs steckt (nach dem eigenen Service oder eigenen Angriff), bereit für Block und Verteidigung. Viele Spielerinnen verwechseln das am Anfang." },
   ];
   const accWrap = document.getElementById("accWrap");
   BEGRIFFE.forEach((b) => {
@@ -755,7 +755,7 @@
     5: { 1:{x:304.5,y:235.9}, 2:{x:304.6,y:83.0}, 3:{x:102.1,y:228.6}, 4:{x:74.3,y:102.5}, 5:{x:151.6,y:131.3}, 6:{x:202.6,y:235.8} },
     6: { 1:{x:312.1,y:253.3}, 2:{x:341.0,y:157.0}, 3:{x:283.8,y:57.3}, 4:{x:94.3,y:251.8}, 5:{x:205.9,y:259.4}, 6:{x:238.5,y:94.7} },
   };
-  const ANNAHME_TOLERANCE = 45; // px in der 400x372-viewBox (~1.3m)
+  const ANNAHME_TOLERANCE = 70; // px in der 400x372-viewBox (~2m) — bewusst grosszügig, es geht um die Grundidee der Position, nicht um den exakten Punkt
 
   const selOverviewRotation = document.getElementById("selOverviewRotation");
   const flipRow = document.getElementById("flipRow");
