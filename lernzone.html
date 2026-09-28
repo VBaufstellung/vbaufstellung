@@ -225,7 +225,7 @@
       <div class="kz-team" id="kzTeamA"></div>
       <div class="kz-team" id="kzTeamB"></div>
     </div>
-    <p class="note">Grafik: Swiss Volley &ndash; Manual Volleyball (J+S), Abbildung 7 &bdquo;Das Spielphasenmodell&ldquo;, 1:1 &uuml;bernommen mit freundlicher Genehmigung von Swiss Volley (die Nadel ist die Original-Nadel, nur drehbar gemacht). Bausteine: <a href="https://www.volleyballswissmade.ch/de" target="_blank" rel="noopener">Volleyball.SwissMade</a> &ndash; Titel &amp; ID als Verweis, die Inhalte findest du nach dem Login mit deinem VolleyManager-Konto &uuml;ber die Suche nach dem Titel. Stufe richtet sich nach dem oben gew&auml;hlten System.</p>
+    <p class="note">Grafik: Swiss Volley &ndash; Manual Volleyball (J+S), Abbildung 7 &bdquo;Das Spielphasenmodell&ldquo;, 1:1 &uuml;bernommen mit freundlicher Genehmigung von Swiss Volley (die Nadel ist die Original-Nadel, nur drehbar gemacht). Bausteine: <a href="https://www.volleyballswissmade.ch/de" target="_blank" rel="noopener">Volleyball.SwissMade</a> &ndash; Titel &amp; ID als Verweis, die Inhalte findest du nach dem Login mit deinem VolleyManager-Konto &uuml;ber die Suche nach dem Titel. Die angezeigte Stufe passt zum System, das du oben gew&auml;hlt hast.</p>
   </div>
 
   <!-- BEGRIFFE -->
@@ -260,7 +260,7 @@
   <!-- ALLE ROTATIONEN UEBERSICHT -->
   <div class="card">
     <h2>Alle Rotationen im Überblick</h2>
-    <p class="sub">Rotation wählen, dann Karte umdrehen &mdash; Grundposition, Basisposition und Annahme im Vergleich.</p>
+    <p class="sub">Wähle eine Rotation und dreh die Karten um &mdash; so vergleichst du Grundposition, Basisposition und Annahme.</p>
     <div class="toolbar" id="overviewRotationToolbar">
       <label>Rotation:
         <select id="selOverviewRotation"></select>
@@ -273,7 +273,7 @@
   <!-- ANNAHME UEBUNG -->
   <div class="card">
     <h2>Annahme-Positionen üben</h2>
-    <p class="sub">Rotation wählen, Spielerinnen möglichst nah an die Vorlage ziehen, dann prüfen. Bei "richtig" geht's automatisch zur nächsten Rotation weiter.</p>
+    <p class="sub">Wähle eine Rotation, zieh die Spielerinnen möglichst nah an die Vorlage und prüf dann deine Aufstellung. Stimmt alles, geht es automatisch zur nächsten Rotation weiter.</p>
     <div class="toolbar" id="annahmeTabs"></div>
     <p class="note" id="annahmeFixedNote" style="display:none;"></p>
     <div class="annahme-practice-row">
@@ -317,7 +317,7 @@
     <h2>Angriffsoptionen &amp; Begriffe<span class="wip-badge">Work in Progress</span></h2>
     <p class="sub">Angriffsvarianten (z. B. Diagonal-/Parallelangriff, Lob, Pipe, Kurzball etc.) und die zugehörigen Begriffe &mdash; einheitlich für alle Teams des Vereins.</p>
     <div class="wip-box">
-      <b>Noch nicht fertig.</b> Dieser Abschnitt ist in Arbeit: Jan erstellt zuerst das Quellenmaterial (Angriffsoptionen, Bezeichnungen, Grafiken) und gleicht es mit dem Verein ab, bevor es hier vereinsweit als verbindliche Begrifflichkeit eingebaut wird. Bis dahin bleibt diese Karte ein Platzhalter.
+      <b>Noch nicht fertig.</b> Hier findest du bald alle Angriffsvarianten mit Grafiken und die Begriffe, die wir im ganzen Verein einheitlich verwenden. Die Inhalte werden gerade zusammengestellt und mit dem Trainerteam abgestimmt &mdash; schau bald wieder vorbei.
     </div>
   </div>
 
@@ -418,7 +418,7 @@
     layer.appendChild(g);
   }
 
-  // Verbindungslinien der Grundposition (Rechteck bzw. Quadrat), wie in Jans Vorlagen.
+  // Verbindungslinien der Grundposition (Rechteck bzw. Quadrat), wie in den Vereinsvorlagen.
   function drawGrundLines(layer, grid, posCount) {
     const pairs = posCount === 6
       ? [[4, 3], [3, 2], [5, 6], [6, 1], [4, 5], [3, 6], [2, 1]]
@@ -521,7 +521,7 @@
 
   // ---------- Kompass: Swiss-Volley-Spielphasenmodell (Originalgrafik) + exakt aufgelegtes Overlay ----------
   // Bereiche wurden per Farbsegmentierung direkt aus der Originalgrafik abgeleitet (keine Neuzeichnung).
-  // Kategorien (Jan): 1 = Ballwechsel verarbeiten, 2 = Ballwechsel eroeffnen, 3 = Punkt machen / verhindern.
+  // Kategorien (Verein): 1 = Ballwechsel verarbeiten, 2 = Ballwechsel eroeffnen, 3 = Punkt machen / verhindern.
   // Die beiden Nadelenden (Team A / Team B) zeigen immer auf die gegenueberliegenden Bereiche derselben Kategorie.
   const KZ_GEOM = {"W": 1000.0, "H": 797.4, "cx": 498.42, "cy": 330.2, "r": 128.07, "needleA": 49.3, "needle": {"x": 368.04, "y": 200.0, "size": 260.82}};
   const KZ_PATHS = {"punktmachen": "M261.9 241.8 L263.9 243.3 L313.4 231.4 L317.0 221.6 L322.7 215.5 L325.8 213.4 L333.0 211.3 L341.8 212.4 L347.4 215.5 L352.1 220.1 L354.6 224.7 L355.7 228.4 L355.7 236.1 L354.6 239.7 L350.0 247.4 L375.8 289.7 L386.1 267.0 L393.3 255.7 L401.0 245.9 L413.9 233.0 L423.7 225.3 L443.8 213.4 L464.9 205.7 L483.5 202.1 L507.7 201.5 L525.3 204.1 L540.2 208.2 L557.2 215.5 L573.2 225.3 L583.5 233.5 L595.4 245.4 L605.7 258.8 L616.0 277.3 L621.6 292.3 L623.2 299.5 L628.9 303.1 L667.5 319.6 L673.2 312.9 L677.3 310.3 L682.0 308.8 L690.2 308.8 L697.4 311.9 L705.7 320.6 L754.6 284.5 L750.5 264.9 L743.8 243.8 L734.5 221.6 L726.3 205.7 L718.6 192.8 L704.6 173.2 L690.7 156.7 L676.3 142.3 L670.1 137.1 L659.3 144.8 L638.7 126.8 L637.1 123.2 L637.1 119.6 L639.7 114.9 L638.1 113.4 L609.3 97.9 L588.7 89.7 L570.1 84.0 L552.1 79.9 L525.8 76.3 L482.5 76.3 L464.9 78.4 L441.2 83.0 L424.7 87.6 L402.1 95.9 L377.3 107.7 L362.4 116.5 L346.4 127.3 L328.4 141.8 L312.4 157.2 L301.5 169.6 L291.8 182.5 L275.8 208.2 L268.0 224.2 L267.5 228.4 Z", "punktverhindern": "M253.1 228.9 L246.9 245.4 L251.0 247.4 L255.2 247.4 L257.7 251.0 L250.5 276.3 L246.4 300.5 L244.8 319.1 L245.4 351.5 L247.9 372.7 L252.1 392.8 L260.3 419.6 L267.0 436.1 L277.3 456.7 L292.3 480.4 L307.2 499.5 L318.6 511.3 L327.3 505.7 L347.9 524.7 L349.0 526.8 L349.0 532.0 L346.9 536.1 L377.3 556.2 L404.1 569.1 L428.9 577.8 L457.2 584.5 L488.1 588.1 L515.5 588.1 L537.1 586.1 L557.2 582.5 L576.8 577.3 L603.6 567.5 L625.8 556.7 L649.0 542.3 L669.1 526.8 L689.2 507.7 L708.8 484.5 L721.1 466.5 L730.9 449.5 L740.2 429.9 L744.8 418.0 L752.6 392.8 L756.7 372.2 L758.8 355.2 L757.7 333.0 L758.8 317.5 L755.2 287.1 L754.1 286.1 L705.7 321.6 L706.7 332.5 L704.1 339.7 L697.4 346.9 L689.7 350.0 L679.9 349.5 L673.2 345.9 L669.6 342.3 L665.5 333.5 L665.5 325.3 L667.0 321.1 L666.0 320.1 L625.3 302.1 L624.2 304.1 L626.8 318.6 L626.8 341.2 L622.7 364.4 L617.5 379.4 L611.3 392.3 L604.6 403.1 L595.9 414.4 L583.0 427.3 L573.2 435.1 L557.2 444.8 L543.3 451.0 L525.8 456.2 L513.9 458.2 L483.0 458.2 L471.1 456.2 L453.6 451.0 L430.4 439.7 L414.4 427.8 L400.5 413.9 L389.2 398.5 L377.8 375.8 L373.7 362.9 L370.6 347.4 L369.6 323.7 L371.6 306.7 L375.3 291.2 L349.0 247.4 L344.3 251.0 L340.2 252.6 L333.0 253.1 L326.8 251.5 L323.2 249.5 L318.0 244.3 L315.5 239.7 L314.4 233.5 L313.4 232.5 L263.4 244.3 L260.8 241.8 L267.0 225.8 L257.7 219.6 Z", "annahme": "M584.5 86.6 L561.3 72.2 L541.8 62.4 L523.2 54.6 L492.8 44.8 L464.4 38.7 L434.5 35.1 L398.5 34.5 L366.5 37.6 L329.9 45.4 L299.0 55.7 L266.5 70.6 L246.9 82.0 L216.0 104.1 L200.0 118.0 L185.1 133.0 L167.0 154.1 L152.6 174.7 L149.5 177.8 L147.4 177.8 L146.4 178.9 L140.2 193.8 L139.2 198.5 L140.7 202.1 L146.4 205.7 L245.9 245.4 L247.9 242.3 L255.7 221.6 L258.8 219.1 L266.0 224.2 L268.0 223.2 L277.8 203.1 L290.2 183.5 L304.1 165.5 L320.1 148.5 L334.0 136.1 L349.5 124.2 L372.2 109.8 L394.3 98.5 L411.9 91.2 L436.1 83.5 L459.8 78.4 L485.6 75.3 L512.9 74.7 L533.5 76.3 L560.8 80.9 L583.5 87.6 Z", "service": "M905.7 320.6 L903.6 318.0 L898.5 316.0 L765.5 318.6 L763.9 320.1 L763.9 345.9 L759.3 352.1 L757.2 374.2 L752.1 397.9 L741.2 429.4 L724.2 462.9 L705.7 489.7 L682.5 515.5 L670.1 526.8 L653.1 540.2 L636.1 551.5 L619.6 560.8 L596.9 571.1 L569.1 580.4 L548.5 585.1 L520.1 588.7 L494.3 589.2 L472.7 587.6 L445.4 583.0 L417.5 574.7 L416.5 575.8 L430.9 585.6 L449.0 595.9 L467.0 604.6 L491.8 614.4 L526.3 624.2 L545.4 627.8 L572.2 630.9 L617.0 630.9 L636.6 628.9 L657.7 625.3 L678.9 620.1 L696.9 614.4 L721.6 604.6 L739.7 595.9 L756.2 586.6 L779.4 571.1 L799.5 555.2 L810.8 544.8 L836.6 517.0 L851.0 497.9 L860.8 483.0 L879.9 446.9 L888.1 426.3 L895.4 403.6 L901.5 376.3 L905.2 347.4 L906.7 345.9 L906.7 326.3 Z", "verarbeiten_gewinn": "M721.6 23.7 L715.5 29.4 L639.7 116.0 L638.1 119.1 L638.7 125.3 L658.8 143.8 L671.6 135.6 L693.3 156.7 L707.2 173.2 L723.7 196.9 L737.1 221.6 L746.4 243.8 L753.1 264.9 L756.7 282.5 L758.2 284.5 L835.1 297.9 L899.0 255.7 L892.8 230.9 L883.0 203.6 L869.6 175.3 L856.2 152.6 L842.8 133.5 L825.8 112.9 L809.8 96.4 L791.8 80.4 L772.7 66.0 L748.5 51.0 L745.9 47.4 L749.0 41.2 L730.4 24.7 L726.8 23.2 Z", "verarbeiten_verlust": "M179.4 336.1 L103.6 382.0 L107.7 407.7 L113.9 432.5 L123.7 460.8 L135.1 486.1 L147.4 508.2 L161.3 528.9 L178.9 550.5 L202.6 574.7 L237.6 603.1 L235.6 607.7 L255.2 625.3 L258.2 626.3 L262.9 625.8 L270.6 618.6 L346.9 534.5 L348.5 529.9 L347.9 526.3 L344.8 522.2 L327.8 506.7 L317.5 512.9 L299.5 493.3 L281.4 468.0 L267.0 441.8 L257.7 419.6 L247.9 386.1 L243.3 355.7 L239.7 353.6 Z"};
@@ -1042,14 +1042,14 @@
   }
 
   // ---------- Alle Rotationen im Überblick (Dropdown + Umdreh-Karten) ----------
-  // Annahme-Referenzbilder von Jan (eigene Läufer-Aufnahmen aus dem Spielfeld-Tool, 5:1-System).
+  // Annahme-Referenzbilder (Läufer-Aufnahmen aus dem Spielfeld-Tool, 5:1-System).
   const ANNAHME_IMAGES = {
     1: "annahme-1.png", 2: "annahme-2.png", 3: "annahme-3.png",
     4: "annahme-4.png", 5: "annahme-5.png", 6: "annahme-6.png",
   };
 
   // Zielkoordinaten (viewBox 400x372) je Rotation & Positionsnummer, automatisch aus
-  // Jans eigenen Läufer-Bildern (annahme-1..6.png) extrahiert — dient als Basis für die
+  // den Läufer-Bildern (annahme-1..6.png) extrahiert — dient als Basis für die
   // "Prüfen"-Funktion unten. Toleranz beim Vergleich: siehe ANNAHME_TOLERANCE.
   const ANNAHME_TARGETS = {
     1: { 1:{x:354.7,y:270.8}, 2:{x:314.9,y:239.0}, 3:{x:94.9,y:128.7}, 4:{x:48.7,y:170.5}, 5:{x:104.4,y:265.6}, 6:{x:214.7,y:268.8} },
@@ -1059,7 +1059,7 @@
     5: { 1:{x:304.5,y:235.9}, 2:{x:304.6,y:83.0}, 3:{x:102.1,y:228.6}, 4:{x:74.3,y:102.5}, 5:{x:151.6,y:131.3}, 6:{x:202.6,y:235.8} },
     6: { 1:{x:312.1,y:253.3}, 2:{x:341.0,y:157.0}, 3:{x:283.8,y:57.3}, 4:{x:94.3,y:251.8}, 5:{x:205.9,y:259.4}, 6:{x:238.5,y:94.7} },
   };
-  // 4:4 (vereinsintern), aus Jans Vorlage "44 annahme": 3er-Riegel Pos. 3 (N), 4 (Z2), 2 (N); Pos. 1 (Z) laeuft ein.
+  // 4:4 (vereinsintern), aus der Vereinsvorlage "44 annahme": 3er-Riegel Pos. 3 (N), 4 (Z2), 2 (N); Pos. 1 (Z) laeuft ein.
   const ANNAHME_TARGETS_44 = { 3: { x: 103.0, y: 199.8 }, 2: { x: 299.0, y: 197.7 }, 4: { x: 200.3, y: 227.9 }, 1: { x: 327.5, y: 219.0 } };
   function annahmeTargetsFor(s, n) { return s.system === "4:4" ? ANNAHME_TARGETS_44 : ANNAHME_TARGETS[n]; }
   function annahmeImageFor(s, n) { return s.system === "4:4" ? "annahme-44.png" : (s.posCount === 6 ? ANNAHME_IMAGES[n] : null); }
@@ -1166,7 +1166,7 @@
     } else {
       const empty = document.createElement("div");
       empty.className = "fb-empty";
-      empty.textContent = "Für dieses System noch kein Referenzbild hinterlegt.";
+      empty.textContent = "Für dieses System gibt es noch keine Vorlage.";
       annahmeContent.appendChild(empty);
     }
   }
@@ -1373,7 +1373,7 @@
     const targets = annahmeTargetsFor(currentSystem(), annahmeRotation);
     if (!targets) {
       annahmeStatusEl.className = "annahme-status fail";
-      annahmeStatusEl.textContent = "Für diese Rotation liegen noch keine Prüfdaten vor.";
+      annahmeStatusEl.textContent = "Diese Rotation kann noch nicht geprüft werden.";
       return;
     }
     let allOk = true;
@@ -1405,7 +1405,7 @@
       }
     } else {
       annahmeStatusEl.className = "annahme-status fail";
-      annahmeStatusEl.textContent = "Noch nicht ganz — die rot umrandeten Spielerinnen nochmal an die Vorlage anpassen und erneut prüfen.";
+      annahmeStatusEl.textContent = "Noch nicht ganz — schieb die rot umrandeten Spielerinnen näher an die Vorlage und prüf nochmals.";
     }
   }
   document.getElementById("btnAnnahmeCheck").addEventListener("click", checkAnnahme);
