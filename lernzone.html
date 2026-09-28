@@ -93,6 +93,11 @@
   .flip-back .fb-empty { font-size: 12px; color: #9CA3AF; text-align: center; padding: 0 10px; }
 
   .annahme-practice-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .ref-frame { position: relative; min-height: 200px; }
+  .ref-cover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    background: repeating-linear-gradient(45deg, #EFF6FF, #EFF6FF 12px, #DBEAFE 12px, #DBEAFE 24px); border-radius: 8px; }
+  .ref-cover-text { font-size: 13px; font-weight: 700; color: #1D4ED8; }
+  .ref-frame.revealed .ref-cover { display: none; }
   .annahme-practice-row .court-box { flex: 1 1 260px; min-width: 240px; }
   .player.correct circle.main { stroke: #16A34A; stroke-width: 4px; }
   .player.wrong circle.main { stroke: #DC2626; stroke-width: 4px; }
@@ -273,7 +278,7 @@
   <!-- ANNAHME UEBUNG -->
   <div class="card">
     <h2>Annahme-Positionen üben</h2>
-    <p class="sub">Wähle eine Rotation, zieh die Spielerinnen möglichst nah an die Vorlage und prüf dann deine Aufstellung. Stimmt alles, geht es automatisch zur nächsten Rotation weiter.</p>
+    <p class="sub">Wähle eine Rotation, zieh die Spielerinnen dorthin, wo sie in der Annahme stehen, und prüf deine Aufstellung. Stimmt alles, geht es automatisch zur nächsten Rotation weiter. Kommst du nicht weiter, kannst du rechts die Vorlage aufdecken.</p>
     <div class="toolbar" id="annahmeTabs"></div>
     <p class="note" id="annahmeFixedNote" style="display:none;"></p>
     <div class="annahme-practice-row">
@@ -289,7 +294,14 @@
       </div>
       <div class="court-box">
         <h3 style="text-align:center;">Vorlage</h3>
-        <div class="court-frame"><img id="annahmeRefImg" src="" alt="Annahme-Vorlage" style="width:100%;height:auto;display:block;"></div>
+        <div class="court-frame ref-frame" id="annahmeRefFrame">
+          <img id="annahmeRefImg" src="" alt="Annahme-Vorlage" style="width:100%;height:auto;display:block;">
+          <div class="ref-cover" id="annahmeRefCover">
+            <div class="ref-cover-text">Zuerst selbst probieren!</div>
+            <button id="btnAnnahmeReveal" class="small">Vorlage anzeigen</button>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:6px;"><button id="btnAnnahmeHide" class="small" style="display:none;">Vorlage verbergen</button></div>
       </div>
     </div>
     <div class="toolbar" style="margin-top:8px;">
@@ -1360,6 +1372,7 @@
     annahmeFeedback = {};
     annahmeStatusEl.className = "annahme-status";
     if (!loadAnnahme()) { annahmeState = { players: defaultAnnahmeFormation() }; saveAnnahme(); }
+    setAnnahmeRefRevealed(false);
     if (annahmeImageFor(currentSystem(), annahmeRotation)) {
       annahmeRefImg.src = annahmeImageFor(currentSystem(), annahmeRotation);
       annahmeRefImg.style.display = "block";
@@ -1367,6 +1380,12 @@
       annahmeRefImg.style.display = "none";
     }
     renderAnnahme();
+  }
+
+  // Vorlage erst nach Klick zeigen (zuerst selbst probieren)
+  function setAnnahmeRefRevealed(on) {
+    document.getElementById("annahmeRefFrame").classList.toggle("revealed", on);
+    document.getElementById("btnAnnahmeHide").style.display = on ? "inline-block" : "none";
   }
 
   function checkAnnahme() {
@@ -1409,6 +1428,8 @@
     }
   }
   document.getElementById("btnAnnahmeCheck").addEventListener("click", checkAnnahme);
+  document.getElementById("btnAnnahmeReveal").addEventListener("click", () => setAnnahmeRefRevealed(true));
+  document.getElementById("btnAnnahmeHide").addEventListener("click", () => setAnnahmeRefRevealed(false));
 
   document.getElementById("btnAnnahmeReset").addEventListener("click", () => {
     if (!confirm("Entwurf für diese Rotation auf die Standard-Ausgangslage zurücksetzen?")) return;
