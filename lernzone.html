@@ -146,6 +146,18 @@
   .quiz-status { font-size: 12.5px; color: #6B7280; margin-bottom: 8px; }
 
   .footer-note { margin-top: 18px; font-size: 11.5px; color: #9CA3AF; border-top: 1px solid #E5E7EB; padding-top: 10px; }
+
+  /* Work in progress */
+  .wip-badge {
+    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.3px;
+    color: #92400E; background: #FEF3C7; border: 1px solid #FCD34D;
+    border-radius: 999px; padding: 2px 9px; vertical-align: middle; margin-left: 8px;
+  }
+  .wip-box {
+    border: 1px dashed #FCD34D; background: #FFFBEB; border-radius: 10px;
+    padding: 14px 16px; font-size: 13px; color: #78350F; line-height: 1.55;
+  }
+  .wip-box b { color: #92400E; }
 </style>
 </head>
 <body>
@@ -196,7 +208,7 @@
       <span class="kompass-legend-item"><span class="kompass-badge" style="background:#6B7280;">B</span> Basisposition</span>
       <span class="kompass-legend-item"><span class="kompass-badge" style="background:#6B7280;">S</span> Startposition (Verteidigung/Block)</span>
     </div>
-    <p class="note">Eigene Darstellung, inhaltlich angelehnt an das Spielphasenmodell von Swiss Volley / J+S-Manual Volleyball &mdash; keine Kopie der Originalgrafik. Quelle der Begrifflichkeiten: Swiss Volley.</p>
+    <p class="note">Quelle: Swiss Volley &ndash; Manual Volleyball (J+S), Abbildung 7 &bdquo;Das Spielphasenmodell&ldquo; &mdash; Darstellung mit freundlicher Genehmigung von Swiss Volley übernommen und als interaktives Element umgesetzt.</p>
   </div>
 
   <!-- BEGRIFFE -->
@@ -280,6 +292,15 @@
     <div class="toolbar" style="margin-top:10px;">
       <button id="btnQuizNext" class="primary" style="display:none;">Weiter</button>
       <button id="btnQuizRestart" style="display:none;">Neu starten</button>
+    </div>
+  </div>
+
+  <!-- ANGRIFFSOPTIONEN (WIP) -->
+  <div class="card">
+    <h2>Angriffsoptionen &amp; Begriffe<span class="wip-badge">Work in Progress</span></h2>
+    <p class="sub">Angriffsvarianten (z. B. Diagonal-/Parallelangriff, Lob, Pipe, Kurzball etc.) und die zugehörigen Begriffe &mdash; einheitlich für alle Teams des Vereins.</p>
+    <div class="wip-box">
+      <b>Noch nicht fertig.</b> Dieser Abschnitt ist in Arbeit: Jan erstellt zuerst das Quellenmaterial (Angriffsoptionen, Bezeichnungen, Grafiken) und gleicht es mit dem Verein ab, bevor es hier vereinsweit als verbindliche Begrifflichkeit eingebaut wird. Bis dahin bleibt diese Karte ein Platzhalter.
     </div>
   </div>
 
@@ -463,53 +484,84 @@
     }
   }
 
-  // ---------- Kompass (Rad + verschiebbare Nadel) ----------
-  // 0° = oben (12 Uhr), im Uhrzeigersinn. 4 Sektoren zu je 90°.
+  // ---------- Kompass (zweiringiges Rad + verschiebbare Nadel) ----------
+  // Original: Swiss Volley Manual Volleyball (J+S), Abbildung 7 "Das Spielphasenmodell".
+  // 0° = oben (12 Uhr), im Uhrzeigersinn. Innenring = 2 Halbkreise (Punkt machen / Punkt verhindern),
+  // Aussenring = 4 Viertel (Annahme / verarbeiten / Service / verarbeiten).
+  const KOMPASS_CX = 170, KOMPASS_CY = 170, KOMPASS_R = 150, KOMPASS_HUB = 32, KOMPASS_MID = 96;
+
   const KOMPASS_PHASES = [
     {
-      angle: 0, color: "#DC2626", title: "Punkt machen",
-      sub: ["Zuspiel & Angriff", "abschliessen"],
-      text: "Nach erfolgreicher Annahme folgen Zuspiel (2. Kontakt) und Angriff (3. Kontakt). Ziel: den Ball kontrolliert und effektiv zum Punkt bringen."
+      id: "punktmachen", ring: "inner", a0: -90, a1: 90, labelAngle: 0,
+      color: "#DC2626", title: "Punkt machen",
+      text: "Mit mutigem und variantenreichem Offensivspiel punkten: Nach erfolgreicher Annahme folgen Zuspiel (2. Ballkontakt) und Angriff (3. Ballkontakt). Die Angreiferin verschiebt sich so früh wie möglich in die Startposition des Angriffs, um die Gegnerinnen unter Druck zu setzen."
     },
     {
-      angle: 90, color: "#93C5FD", title: "Ballwechsel eröffnen (Service)",
-      sub: ["Service", "Verteidigung organisieren"],
-      text: "Das eigene Team serviert (1. Kontakt beim Gegner). Direkt danach wechselt die Servicespielerin von der Angriffs- in die Abwehrhaltung — sie geht in die Basisposition."
+      id: "punktverhindern", ring: "inner", a0: 90, a1: 270, labelAngle: 180,
+      color: "#1D4ED8", title: "Punkt verhindern",
+      text: "Mit erfolgreichem Defensivspiel einen Gegenangriff ermöglichen: Das Team steht in der Basisposition, bereit für Block und Verteidigung. Alle nicht am Block beteiligten Spielerinnen rechnen damit, dass der Ball zu ihnen kommt."
     },
     {
-      angle: 180, color: "#1D4ED8", title: "Punkt verhindern",
-      sub: ["Verteidigen & blocken", "vorbereiten"],
-      text: "Der Gegner ist im Ballbesitz: das eigene Team steht in der Basisposition — der Ausgangslage für Block und Verteidigung gegen den gegnerischen Angriff."
+      id: "annahme", ring: "outer", a0: -90, a1: 0, labelAngle: -45,
+      color: "#F3A9A2", title: "Ballwechsel eröffnen (Annahme)",
+      text: "Mit der Annahme das Offensivspiel bestmöglich einleiten (1. Ballkontakt): Die Annahmespielerin spielt den Ball hoch und stabil ins Haus, damit die Zuspielerin anschliessend alle Angriffsoptionen offen hat."
     },
     {
-      angle: 270, color: "#F87171", title: "Ballwechsel eröffnen (Annahme)",
-      sub: ["Annahme organisieren", "Angriff einleiten"],
-      text: "Das eigene Team nimmt den gegnerischen Service an (1. Kontakt). Wer annimmt, legt damit den Grundstein für den eigenen Angriffsaufbau."
+      id: "verarbeiten1", ring: "outer", a0: 0, a1: 90, labelAngle: 45,
+      color: "#D6D9DE", title: "Ballwechsel verarbeiten",
+      text: "Den abgeschlossenen Ballwechsel mental verarbeiten und sich neu fokussieren: als Team zusammenkommen (huddle), sich beruhigen (calm down), sich vorbereiten (prepare) und den nächsten Ballwechsel visualisieren (visualize)."
+    },
+    {
+      id: "service", ring: "outer", a0: 90, a1: 180, labelAngle: 135,
+      color: "#A9D6F5", title: "Ballwechsel eröffnen (Service)",
+      text: "Mit mutigem Service eine vorteilhafte Situation schaffen: Der Service ist die einzige Aktion ohne Zeitdruck und die erste eigene Angriffsmöglichkeit. Direkt danach wechselt die Servicespielerin von der Angriffs- in die Abwehrhaltung — sie geht in die Basisposition."
+    },
+    {
+      id: "verarbeiten2", ring: "outer", a0: 180, a1: 270, labelAngle: 225,
+      color: "#D6D9DE", title: "Ballwechsel verarbeiten",
+      text: "Den abgeschlossenen Ballwechsel mental verarbeiten und sich neu fokussieren: als Team zusammenkommen (huddle), sich beruhigen (calm down), sich vorbereiten (prepare) und den nächsten Ballwechsel visualisieren (visualize)."
     },
   ];
-  const KOMPASS_CX = 170, KOMPASS_CY = 170, KOMPASS_R = 150, KOMPASS_HUB = 34;
+  // Reihenfolge im Uhrzeigersinn für die Nadel-Raststellungen (6 Positionen statt 4).
+  const KOMPASS_SNAPS = [-45, 0, 45, 135, 180, 225].map((a) => ((a % 360) + 360) % 360);
 
   function polarPt(cx, cy, r, deg) {
     const rad = (deg * Math.PI) / 180;
     return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) };
   }
-  function wedgePath(cx, cy, r, centerDeg) {
-    const a0 = centerDeg - 45, a1 = centerDeg + 45;
-    const p0 = polarPt(cx, cy, r, a0), p1 = polarPt(cx, cy, r, a1);
-    return `M ${cx} ${cy} L ${p0.x} ${p0.y} A ${r} ${r} 0 0 1 ${p1.x} ${p1.y} Z`;
+  function annulusPath(cx, cy, rIn, rOut, a0, a1) {
+    const p0o = polarPt(cx, cy, rOut, a0), p1o = polarPt(cx, cy, rOut, a1);
+    const p1i = polarPt(cx, cy, rIn, a1), p0i = polarPt(cx, cy, rIn, a0);
+    const largeArc = (a1 - a0) > 180 ? 1 : 0;
+    return `M ${p0o.x} ${p0o.y} A ${rOut} ${rOut} 0 ${largeArc} 1 ${p1o.x} ${p1o.y} L ${p1i.x} ${p1i.y} A ${rIn} ${rIn} 0 ${largeArc} 0 ${p0i.x} ${p0i.y} Z`;
   }
 
   const kompassSvg = document.getElementById("kompassSvg");
   const kompassDetail = document.getElementById("kompassDetail");
-  let kompassAngle = 270; // Start: Annahme
+  let kompassAngle = -45; // Start: Annahme
   let kompassNeedleEl, kompassWedgeEls = {};
 
+  function nearestSnap(deg) {
+    const norm = ((deg % 360) + 360) % 360;
+    let best = KOMPASS_SNAPS[0], bestDiff = 999;
+    KOMPASS_SNAPS.forEach((s) => {
+      const diff = Math.min(Math.abs(norm - s), 360 - Math.abs(norm - s));
+      if (diff < bestDiff) { bestDiff = diff; best = s; }
+    });
+    return best;
+  }
+  function phaseForSnap(snap) {
+    const norm = ((snap % 360) + 360) % 360;
+    return KOMPASS_PHASES.find((p) => (((p.labelAngle % 360) + 360) % 360) === norm) || KOMPASS_PHASES[0];
+  }
+
   function setKompassPhase(angle, updateNeedle) {
-    kompassAngle = ((angle % 360) + 360) % 360;
-    const phase = KOMPASS_PHASES.find((p) => p.angle === kompassAngle) || KOMPASS_PHASES[0];
+    const snapped = nearestSnap(angle);
+    kompassAngle = snapped;
+    const phase = phaseForSnap(snapped);
     kompassDetail.textContent = phase.text;
     Object.keys(kompassWedgeEls).forEach((k) => {
-      kompassWedgeEls[k].setAttribute("opacity", Number(k) === kompassAngle ? "1" : "0.55");
+      kompassWedgeEls[k].setAttribute("opacity", k === phase.id ? "1" : "0.55");
     });
     if (updateNeedle !== false && kompassNeedleEl) {
       kompassNeedleEl.setAttribute("transform", `rotate(${kompassAngle} ${KOMPASS_CX} ${KOMPASS_CY})`);
@@ -519,39 +571,32 @@
   function buildKompass() {
     kompassSvg.innerHTML = "";
     KOMPASS_PHASES.forEach((phase) => {
+      const rIn = phase.ring === "inner" ? KOMPASS_HUB : KOMPASS_MID;
+      const rOut = phase.ring === "inner" ? KOMPASS_MID : KOMPASS_R;
       const path = document.createElementNS(NS, "path");
-      path.setAttribute("d", wedgePath(KOMPASS_CX, KOMPASS_CY, KOMPASS_R, phase.angle));
+      path.setAttribute("d", annulusPath(KOMPASS_CX, KOMPASS_CY, rIn, rOut, phase.a0, phase.a1));
       path.setAttribute("fill", phase.color);
       path.setAttribute("class", "kompass-wedge");
       path.setAttribute("stroke", "#fff");
       path.setAttribute("stroke-width", "2");
-      path.addEventListener("click", () => setKompassPhase(phase.angle));
+      path.addEventListener("click", () => setKompassPhase(phase.labelAngle));
       kompassSvg.appendChild(path);
-      kompassWedgeEls[phase.angle] = path;
+      kompassWedgeEls[phase.id] = path;
 
-      const labelPt = polarPt(KOMPASS_CX, KOMPASS_CY, KOMPASS_R * 0.62, phase.angle);
+      const labelR = (rIn + rOut) / 2;
+      const labelPt = polarPt(KOMPASS_CX, KOMPASS_CY, labelR, phase.labelAngle);
       const label = document.createElementNS(NS, "text");
       label.setAttribute("x", labelPt.x); label.setAttribute("y", labelPt.y);
       label.setAttribute("text-anchor", "middle"); label.setAttribute("class", "kompass-wedge-label");
+      label.setAttribute("font-size", phase.ring === "outer" ? "9.5" : "12");
       const words = phase.title.split(" ");
       words.forEach((w, i) => {
         const tspan = document.createElementNS(NS, "tspan");
-        tspan.setAttribute("x", labelPt.x); tspan.setAttribute("dy", i === 0 ? "0" : "11");
+        tspan.setAttribute("x", labelPt.x); tspan.setAttribute("dy", i === 0 ? "0" : "10");
         tspan.textContent = w;
         label.appendChild(tspan);
       });
       kompassSvg.appendChild(label);
-
-      // Sub-Labels (zwei kurze Stichworte, an den Rand der Sektorhälften gesetzt)
-      [-25, 25].forEach((offset, i) => {
-        const subPt = polarPt(KOMPASS_CX, KOMPASS_CY, KOMPASS_R * 0.94, phase.angle + offset);
-        const subText = document.createElementNS(NS, "text");
-        subText.setAttribute("x", subPt.x); subText.setAttribute("y", subPt.y);
-        subText.setAttribute("text-anchor", "middle"); subText.setAttribute("class", "kompass-sublabel");
-        subText.setAttribute("transform", `rotate(${phase.angle + offset + (phase.angle + offset > 90 && phase.angle + offset < 270 ? 180 : 0)} ${subPt.x} ${subPt.y})`);
-        subText.textContent = phase.sub[i];
-        kompassSvg.appendChild(subText);
-      });
     });
 
     // Marker: Ballkontakte 1/2/3, Basisposition (B), Startposition (S)
@@ -567,11 +612,11 @@
       t.textContent = text;
       kompassSvg.appendChild(t);
     }
-    addMarker(315, 118, "1");   // Annahme -> Punkt machen: 1. Ballkontakt
-    addMarker(350, 115, "2");   // im Punkt machen: 2. Ballkontakt (Zuspiel)
-    addMarker(45, 118, "3");    // Punkt machen -> Service: 3. Ballkontakt (Angriff)
-    addMarker(180, 65, "B");    // Punkt verhindern: Basisposition
-    addMarker(225, 118, "S");   // Punkt verhindern -> Annahme: Startposition
+    addMarker(-65, KOMPASS_MID, "1");   // Annahme -> Punkt machen: 1. Ballkontakt
+    addMarker(20, (KOMPASS_HUB + KOMPASS_MID) / 2 + 12, "2"); // im Punkt machen: 2. Ballkontakt (Zuspiel)
+    addMarker(80, KOMPASS_MID, "3");    // Punkt machen -> verarbeiten: 3. Ballkontakt (Angriff)
+    addMarker(100, KOMPASS_MID, "S");   // Service -> Punkt verhindern: Startposition
+    addMarker(180, (KOMPASS_HUB + KOMPASS_MID) / 2 + 10, "B"); // Punkt verhindern: Basisposition
 
     // Tags: Punktgewinn / Punktverlust
     function addTag(deg, r, text) {
@@ -588,8 +633,8 @@
       t.textContent = text;
       kompassSvg.appendChild(t);
     }
-    addTag(45, 168, "Punktgewinn");
-    addTag(225, 168, "Punktverlust");
+    addTag(65, (KOMPASS_MID + KOMPASS_R) / 2, "Punktgewinn");
+    addTag(255, (KOMPASS_MID + KOMPASS_R) / 2, "Punktverlust");
 
     // Hub (Mitte)
     const hub = document.createElementNS(NS, "circle");
@@ -598,16 +643,16 @@
     kompassSvg.appendChild(hub);
     const hubText = document.createElementNS(NS, "text");
     hubText.setAttribute("x", KOMPASS_CX); hubText.setAttribute("y", KOMPASS_CY + 4);
-    hubText.setAttribute("text-anchor", "middle"); hubText.setAttribute("font-size", "11");
+    hubText.setAttribute("text-anchor", "middle"); hubText.setAttribute("font-size", "10");
     hubText.setAttribute("font-weight", "700"); hubText.setAttribute("fill", "#1D4ED8");
     hubText.textContent = "Wir";
     kompassSvg.appendChild(hubText);
 
-    // Nadel (draggable)
+    // Nadel (draggable, rastet auf 6 Positionen ein)
     kompassNeedleEl = document.createElementNS(NS, "g");
     kompassNeedleEl.setAttribute("class", "kompass-needle");
     const needleLine = document.createElementNS(NS, "polygon");
-    needleLine.setAttribute("points", `${KOMPASS_CX - 7},${KOMPASS_CY} ${KOMPASS_CX + 7},${KOMPASS_CY} ${KOMPASS_CX},${KOMPASS_CY - KOMPASS_R + 14}`);
+    needleLine.setAttribute("points", `${KOMPASS_CX - 6},${KOMPASS_CY} ${KOMPASS_CX + 6},${KOMPASS_CY} ${KOMPASS_CX},${KOMPASS_CY - KOMPASS_R + 10}`);
     needleLine.setAttribute("fill", "#111827"); needleLine.setAttribute("opacity", "0.85");
     kompassNeedleEl.appendChild(needleLine);
     const needleTail = document.createElementNS(NS, "circle");
@@ -638,8 +683,7 @@
     kompassNeedleEl.addEventListener("pointerup", (evt) => {
       dragging = false;
       const deg = angleFromEvent(evt);
-      const snapped = Math.round(deg / 90) * 90;
-      setKompassPhase(snapped);
+      setKompassPhase(deg);
     });
 
     setKompassPhase(kompassAngle);
